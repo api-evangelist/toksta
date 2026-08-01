@@ -1,7 +1,26 @@
 aid: toksta
+accessModel:
+  pricing: unknown
+  onboarding: unknown
+  trial: false
+  try_now: false
+  public: false
+  label: Unknown
+  confidence: low
+  source: []
+  generated: '2026-07-22'
+  method: derived
+image: https://kinlane-images.s3.amazonaws.com/shared/apis-json/icons/toksta.png
 name: toksta
-description: toksta is a company surfaced as a portfolio company of seedcamp and added to the API Evangelist
-  network as a stub for enrichment. This profile is a lead awaiting the enrichment pipeline.
+description: >-
+  Toksta is a B2B influencer marketing intelligence platform that uses AI agents
+  to research, filter, and match creators at scale for enterprise brands. It
+  provides a vetted B2B creator database with LinkedIn and YouTube influencer
+  search, automated relevance scoring (AI Match), granular vetting benchmarks
+  (Deep Metrics), campaign management, brand monitoring, and reporting. Toksta is
+  a portfolio company of Seedcamp. As of this enrichment pass the product is a
+  web application (hub.toksta.com) with a marketing site and blog; no public API,
+  developer portal, OpenAPI, SDK, or /.well-known discovery surface was found.
 url: https://raw.githubusercontent.com/api-evangelist/toksta/refs/heads/main/apis.yml
 x-type: company
 x-source: vc-portfolio
@@ -11,9 +30,17 @@ x-tier: stub
 x-tier-reason: portfolio-lead
 specificationVersion: '0.20'
 created: '2026-07-17'
-modified: '2026-07-17'
+modified: '2026-07-21'
 tags:
 - Company
+- Influencer Marketing
+- Marketing
+- B2B
+- Creator Discovery
+- AI Agents
+- LinkedIn
+- YouTube
+- SaaS
 apis: []
 maintainers:
 - FN: Kin Lane
@@ -22,4 +49,17 @@ maintainers:
   email: info@apis.io
 common:
 - type: Website
-  url: http://toksta.com
+  url: https://www.toksta.com
+- type: Blog
+  url: https://www.toksta.com/blog
+- type: SignUp
+  url: https://hub.toksta.com/signup
+- type: Login
+  url: https://hub.toksta.com/login
+- type: DomainSecurity
+  url: security/toksta-domain-security.yml
+x-enrichment:
+  date: '2026-07-21'
+  status: minimal
+  artifacts_added: 1
+  pass: local-v1
