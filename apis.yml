@@ -1,36 +1,42 @@
 aid: toksta
 accessModel:
-  pricing: unknown
-  onboarding: unknown
-  trial: false
-  try_now: false
-  public: false
-  label: Unknown
-  confidence: low
-  source: []
-  generated: '2026-07-22'
-  method: derived
+  pricing: freemium
+  onboarding: self-serve
+  trial: true
+  try_now: true
+  public: true
+  label: Freemium · Self-serve signup
+  confidence: high
+  source:
+  - https://www.toksta.com/#pricing
+  - https://help.toksta.com/public-api/pricing-and-plans
+  - https://help.toksta.com/public-api/authentication
+  generated: '2026-08-13'
+  method: searched
 image: https://kinlane-images.s3.amazonaws.com/shared/apis-json/icons/toksta.png
 name: toksta
 description: >-
-  Toksta is a B2B influencer marketing intelligence platform that uses AI agents
-  to research, filter, and match creators at scale for enterprise brands. It
-  provides a vetted B2B creator database with LinkedIn and YouTube influencer
-  search, automated relevance scoring (AI Match), granular vetting benchmarks
-  (Deep Metrics), campaign management, brand monitoring, and reporting. Toksta is
-  a portfolio company of Seedcamp. As of this enrichment pass the product is a
-  web application (hub.toksta.com) with a marketing site and blog; no public API,
-  developer portal, OpenAPI, SDK, or /.well-known discovery surface was found.
+  Toksta is a B2B influencer marketing intelligence platform that uses AI agents to
+  research, filter, and match creators at scale for enterprise brands. It runs a vetted
+  B2B creator database with LinkedIn and YouTube influencer search, automated relevance
+  scoring (AI Match), granular vetting benchmarks (Deep Metrics), campaign management,
+  brand monitoring, and reporting. Toksta ships two machine surfaces: the Toksta Public
+  API v1 at api.toksta.com — a credit-metered REST API with a published OpenAPI 3.0.3
+  document and Swagger UI, covering creator search and discovery, enrichment,
+  content-match and audience-match analysis jobs, post evidence, campaigns, creator
+  lists and account usage — and a hosted, OAuth-protected MCP server at mcp.toksta.com
+  exposing 18 tools to Claude and ChatGPT custom connectors. Async work is polling-only;
+  there are no webhooks in v1. Toksta is a portfolio company of Seedcamp.
 url: https://raw.githubusercontent.com/api-evangelist/toksta/refs/heads/main/apis.yml
 x-type: company
 x-source: vc-portfolio
 x-backed-by:
 - seedcamp
-x-tier: stub
-x-tier-reason: portfolio-lead
+x-tier: enriched
+x-tier-reason: portfolio-lead-enriched
 specificationVersion: '0.20'
 created: '2026-07-17'
-modified: '2026-07-21'
+modified: '2026-08-13'
 tags:
 - Company
 - Influencer Marketing
@@ -41,7 +47,78 @@ tags:
 - LinkedIn
 - YouTube
 - SaaS
-apis: []
+- Creator Data
+- MCP
+- Brand Monitoring
+apis:
+- name: Toksta Public API
+  description: >-
+    Credit-metered REST API for Toksta creator data, analysis jobs and SaaS workspace
+    workflows. HTTP Bearer auth with self-serve tk_live_ keys, cursor pagination, a
+    normalized success/error envelope, per-plan rate limiting, and polling-only async
+    jobs across four analysis families. 28 operations, 24 with operationIds.
+  humanURL: https://help.toksta.com/public-api/toksta-public-api
+  baseURL: https://api.toksta.com
+  tags:
+  - Creator Discovery
+  - Influencer Marketing
+  - B2B
+  - Enrichment
+  properties:
+  - type: OpenAPI
+    url: openapi/toksta-public-api-openapi.yml
+  - type: Documentation
+    url: https://help.toksta.com/public-api/getting-started
+  - type: APIReference
+    url: https://help.toksta.com/public-api/toksta-public-api
+  - type: GettingStarted
+    url: https://help.toksta.com/public-api/getting-started
+  - type: SwaggerUI
+    url: https://api.toksta.com/docs
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
+  - type: OAuthScopes
+    url: scopes/toksta-scopes.yml
+  - type: Conventions
+    url: conventions/toksta-conventions.yml
+  - type: ErrorCatalog
+    url: errors/toksta-problem-types.yml
+  - type: DataModel
+    url: data-model/toksta-data-model.yml
+  - type: RateLimits
+    url: rate-limits/toksta-rate-limits.yml
+  - type: Plans
+    url: plans/toksta-plans-pricing.yml
+  - type: Lifecycle
+    url: lifecycle/toksta-lifecycle.yml
+  - type: Conformance
+    url: conformance/toksta-conformance.yml
+  - type: Overlay
+    url: overlays/toksta-public-api-overlay.yaml
+- name: Toksta MCP Server
+  description: >-
+    Hosted remote Model Context Protocol server exposing 18 Toksta tools — campaigns,
+    creator discovery, lists, enrichment, content-fit and audience-fit analysis, and job
+    control — to Claude and ChatGPT custom connectors. OAuth 2.0 protected resource with
+    RFC 8414 and RFC 9728 discovery metadata. Billed against the same credit balance as
+    the REST API; blocked on the Free plan.
+  humanURL: https://help.toksta.com/mcp/mcp-server
+  baseURL: https://mcp.toksta.com
+  tags:
+  - MCP
+  - AI Agents
+  - Creator Discovery
+  properties:
+  - type: MCPServer
+    url: mcp/toksta-mcp.yml
+  - type: MCPServer
+    url: https://mcp.toksta.com/mcp
+  - type: ToolCrosswalk
+    url: mcp/toksta-tool-crosswalk.yml
+  - type: Documentation
+    url: https://help.toksta.com/mcp/mcp-server
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
@@ -56,10 +133,50 @@ common:
   url: https://hub.toksta.com/signup
 - type: Login
   url: https://hub.toksta.com/login
+- type: DeveloperPortal
+  url: https://help.toksta.com/public-api/toksta-public-api
+- type: Documentation
+  url: https://help.toksta.com/public-api/getting-started
+- type: APIReference
+  url: https://help.toksta.com/public-api/toksta-public-api
+- type: GettingStarted
+  url: https://help.toksta.com/public-api/getting-started
+- type: Support
+  url: https://help.toksta.com
+- type: HelpCenter
+  url: https://help.toksta.com
+- type: Pricing
+  url: https://www.toksta.com/#pricing
+- type: MCPServer
+  url: mcp/toksta-mcp.yml
+- type: LLMsTxt
+  url: llms/toksta-llms.txt
+- type: WellKnown
+  url: well-known/toksta-well-known.yml
+- type: Authentication
+  url: authentication/toksta-authentication.yml
+- type: OAuthScopes
+  url: scopes/toksta-scopes.yml
+- type: Conventions
+  url: conventions/toksta-conventions.yml
+- type: ErrorCatalog
+  url: errors/toksta-problem-types.yml
+- type: DataModel
+  url: data-model/toksta-data-model.yml
+- type: RateLimits
+  url: rate-limits/toksta-rate-limits.yml
+- type: Plans
+  url: plans/toksta-plans-pricing.yml
+- type: Lifecycle
+  url: lifecycle/toksta-lifecycle.yml
+- type: Conformance
+  url: conformance/toksta-conformance.yml
+- type: AgentSkill
+  url: skills/_index.yml
 - type: DomainSecurity
   url: security/toksta-domain-security.yml
 x-enrichment:
-  date: '2026-07-21'
-  status: minimal
-  artifacts_added: 1
+  date: '2026-08-13'
+  status: enriched
+  artifacts_added: 24
   pass: local-v1
