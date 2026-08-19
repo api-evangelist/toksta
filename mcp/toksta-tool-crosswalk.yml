@@ -1,0 +1,168 @@
+generated: '2026-08-13'
+method: derived
+source: >-
+  Derived by binding each tool in Toksta's published MCP Tools Reference
+  (https://help.toksta.com/mcp/mcp-server) to the operationId(s) declared in
+  openapi/toksta-public-api-openapi.yml (OpenAPI 3.0.3, "Toksta Public API" v0.1.0,
+  28 operations / 24 named operationIds, servers[] https://api.toksta.com).
+note: >-
+  The live MCP endpoint is OAuth-gated, so tool inputSchemas could not be read from
+  tools/list. Every binding below is by name + published description + credit-cost
+  parity against the REST operation, and confidence is set accordingly. Where the
+  binding is confirmed by BOTH an exact semantic match and matching credit economics
+  published on the same page, confidence is high; where the tool folds two REST calls
+  into one, it is marked composite.
+surfaces:
+- kind: openapi
+  path: openapi/toksta-public-api-openapi.yml
+  served_at: https://api.toksta.com/docs/json
+  gated: false
+  note: The spec document itself is anonymous; every /v1/ operation it describes requires a bearer key.
+- kind: mcp
+  url: https://mcp.toksta.com/mcp
+  gated: true
+  note: tools/list returns 401 invalid_token; OAuth against Supabase Auth.
+- kind: graphql
+  present: false
+  note: No GraphQL surface. https://api.toksta.com/graphql returns the API's JSON 404 envelope.
+crosswalk:
+- tool: get_campaigns
+  category: campaigns
+  rest: [listCampaigns]
+  binding: direct
+  confidence: high
+- tool: get_campaign_details
+  category: campaigns
+  rest: [getCampaign]
+  binding: direct
+  confidence: high
+- tool: create_campaign
+  category: campaigns
+  rest: [createCampaign]
+  binding: direct
+  confidence: high
+- tool: search_creators
+  category: discovery
+  rest: [searchCreators]
+  binding: direct
+  confidence: high
+  note: >-
+    Maps to the synchronous keyword/filter search (POST /v1/creators/search, 1 credit).
+    The separate REST discovery-search and thought-leaders jobs have no MCP tool.
+- tool: get_search_result_posts
+  category: discovery
+  rest: [getSearchResultPosts]
+  binding: direct
+  confidence: high
+- tool: get_creator_details
+  category: discovery
+  rest: [getCreator]
+  binding: direct
+  confidence: high
+- tool: get_creator_lists
+  category: lists
+  rest: [listCreatorLists]
+  binding: direct
+  confidence: high
+- tool: save_creators_to_list
+  category: lists
+  rest: [saveCreatorsToList, createCreatorList]
+  binding: composite
+  confidence: medium
+  note: >-
+    The published description is "Save creators into an existing list or create a new
+    list", which spans both REST operations; which one fires depends on the arguments.
+- tool: enrich_creators
+  category: enrichment
+  rest: [startCreatorEnrichment]
+  binding: direct
+  confidence: high
+  note: Credit cost matches — 1 credit per creator on both surfaces.
+- tool: get_enrichment_results
+  category: enrichment
+  rest: [getEnrichmentResults]
+  binding: direct
+  confidence: high
+- tool: analyze_content_fit
+  category: analysis
+  rest: [startContentMatch]
+  binding: direct
+  confidence: high
+  note: Credit cost matches — 3/5/8 by depth on both surfaces.
+- tool: get_content_fit_posts
+  category: analysis
+  rest: [getContentMatchPosts]
+  binding: direct
+  confidence: high
+- tool: analyze_audience_fit
+  category: analysis
+  rest: [startAudienceMatch]
+  binding: direct
+  confidence: high
+  note: Credit cost matches — 10/20/30 by depth on both surfaces.
+- tool: get_audience_fit_details
+  category: analysis
+  rest: [getAudienceMatchDetails]
+  binding: direct
+  confidence: high
+- tool: get_job_status
+  category: jobs
+  rest: [getJobStatus]
+  binding: direct
+  confidence: high
+- tool: get_job_results
+  category: jobs
+  rest: [getJobResults]
+  binding: direct
+  confidence: high
+- tool: get_bulk_job_results
+  category: jobs
+  rest: [getBulkJobResults]
+  binding: direct
+  confidence: high
+- tool: cancel_job
+  category: jobs
+  rest: [cancelJob]
+  binding: direct
+  confidence: high
+mcp_only: []
+rest_only:
+- operation: discoverySearchCreators
+  path: POST /v1/creators/discovery-search
+  reason: No MCP tool is published for the credit-metered discovery search (1 credit per 100 profiles).
+- operation: findThoughtLeaders
+  path: POST /v1/creators/thought-leaders
+  reason: Async thought-leader discovery job has no MCP tool; only REST exposes it.
+- operation: getAccountUsage
+  path: GET /v1/account/usage
+  reason: >-
+    No MCP tool surfaces credit balance or plan entitlement, even though credit
+    exhaustion is the documented reason MCP access is blocked.
+- operation: getContentMatchResults
+  path: POST /v1/content-match/results
+  reason: >-
+    MCP exposes get_content_fit_posts (evidence snippets) but no tool for the scored
+    content-fit result set itself.
+- operation: getAudienceMatchResults
+  path: POST /v1/audience-match/results
+  reason: >-
+    MCP exposes get_audience_fit_details but no tool for the scored audience-fit
+    result set itself.
+- operation: null
+  path: GET /health, GET /ready, GET /version, GET /v1/
+  reason: >-
+    Unauthenticated system/metadata probes, declared in the spec without operationIds.
+    Not agent-facing work; no MCP equivalent expected.
+coverage:
+  mcp_tools: 18
+  mcp_tools_bound: 18
+  mcp_tools_unbound: 0
+  rest_operations_total: 28
+  rest_operations_with_operation_id: 24
+  rest_operations_bound: 19
+  rest_operations_unbound: 5
+  rest_system_operations_excluded: 4
+  binding_confidence:
+    high: 17
+    medium: 1
+    low: 0

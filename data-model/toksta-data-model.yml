@@ -1,0 +1,194 @@
+generated: '2026-08-13'
+method: derived
+source: >-
+  Derived from openapi/toksta-public-api-openapi.yml — request/response examples,
+  request-body properties, and path parameters across all 24 named operations.
+  Enriched with the endpoint_family / cost_key inventory served anonymously at
+  https://api.toksta.com/v1/.
+note: >-
+  The spec declares NO reusable components.schemas — every response `data` object is
+  typed `object, additionalProperties: true` with the real structure carried only in
+  the per-operation `example`. The graph below is therefore derived from those examples
+  and from the id fields accepted in request bodies. It is faithful to what the
+  provider publishes, but it is not a schema the provider guarantees.
+identifiers:
+  style: UUID v4
+  prefixed_ids:
+  - prefix: 'enrichment:'
+    entity: enrichment run
+    note: Informational only; not resolvable through the generic job endpoints.
+  - prefix: 'content-fit:'
+    entity: content match analysis
+    note: The results endpoints accept the prefixed form or the bare UUID.
+  - prefix: 'audience-fit:'
+    entity: audience match analysis
+    note: The results endpoints accept the prefixed form or the bare UUID.
+  request_ids:
+    prefix: 'req_'
+    field: meta.request_id
+entities:
+- name: Creator
+  description: >-
+    A vetted B2B creator profile on LinkedIn or YouTube — the root entity of the whole API.
+  id_field: id
+  id_type: uuid
+  fields:
+  - {name: id, type: uuid}
+  - {name: name, type: string}
+  - {name: bio, type: string}
+  - {name: location, type: string}
+  - {name: avatar_url, type: url}
+  - {name: content_categories, type: array<string>}
+  - {name: target_audiences, type: array<string>}
+  - {name: languages, type: array<string>}
+  - {name: platform, type: enum, values: [linkedin, youtube]}
+  - {name: handle, type: string}
+  - {name: profile_url, type: url}
+  - {name: metrics, type: object}
+  - {name: created_at, type: datetime}
+  - {name: updated_at, type: datetime}
+  - {name: enrichment, type: object, note: 'carries is_enriched'}
+  operations: [searchCreators, discoverySearchCreators, findThoughtLeaders, getCreator]
+- name: CreatorMetrics
+  description: Engagement metrics embedded on a Creator; also the sort keys for search.
+  embedded_in: Creator.metrics
+  fields:
+  - {name: followers_count, type: number}
+  - {name: engagement_rate, type: number}
+  - {name: avg_posts_per_month, type: number}
+  - {name: avg_views_per_post, type: number}
+  - {name: shares_per_post, type: number}
+  - {name: comments_per_post, type: number}
+  - {name: reactions_per_post, type: number}
+- name: Campaign
+  description: A brand campaign with targeting criteria; the context for fit analysis.
+  id_field: id
+  id_type: uuid
+  fields:
+  - {name: name, type: string}
+  - {name: content_keywords, type: array<string>}
+  - {name: target_audience_criteria, type: array<string>}
+  - {name: target_platforms, type: array<enum>}
+  - {name: search_country, type: string}
+  operations: [listCampaigns, createCampaign, getCampaign]
+  entitlement: workspace (SaaS only)
+- name: CreatorList
+  description: A saved shortlist of creators.
+  id_field: id
+  id_type: uuid
+  fields:
+  - {name: name, type: string}
+  - {name: platform, type: enum, values: [linkedin, youtube]}
+  - {name: is_private, type: boolean}
+  operations: [listCreatorLists, createCreatorList, saveCreatorsToList]
+  entitlement: workspace (SaaS only)
+- name: Job
+  description: >-
+    An async unit of work. Discovery jobs are addressable by plain UUID; fit and
+    enrichment work is addressed through family-specific results endpoints instead.
+  id_field: id
+  id_type: uuid
+  fields:
+  - {name: id, type: uuid}
+  - {name: job_type, type: string, example: creator_discovery}
+  - {name: status, type: enum, values: [queued, running, succeeded, failed, canceled, expired]}
+  - {name: source_status, type: string}
+  - {name: is_terminal, type: boolean}
+  - {name: progress, type: object, note: 'total_items, completed_items, approved_items, failed_items'}
+  - {name: campaign_id, type: uuid, nullable: true}
+  - {name: platform, type: enum}
+  - {name: created_list_id, type: uuid, nullable: true}
+  - {name: created_at, type: datetime}
+  - {name: updated_at, type: datetime}
+  - {name: completed_at, type: datetime}
+  - {name: result_expires_at, type: datetime}
+  - {name: result_retention_days, type: integer, example: 30}
+  - {name: error_message, type: string, nullable: true}
+  operations: [getJobStatus, getJobResults, getBulkJobResults, cancelJob]
+- name: Enrichment
+  description: A per-creator enrichment run producing engagement metrics and contact data.
+  keyed_by: creator_ids
+  operations: [startCreatorEnrichment, getEnrichmentResults]
+  note: Has no standalone status endpoint; state is re-queried by the original creator_ids.
+- name: ContentMatch
+  description: Content-fit scoring of a creator's recent posts against campaign topics.
+  id_field: 'job_id (content-fit:<uuid>)'
+  operations: [startContentMatch, getContentMatchResults, getContentMatchPosts]
+  modes: [quick, standard, deep]
+- name: AudienceMatch
+  description: Audience-fit scoring of a creator's real engagers against target audience criteria.
+  id_field: 'job_id (audience-fit:<uuid>)'
+  operations: [startAudienceMatch, getAudienceMatchResults, getAudienceMatchDetails]
+  modes: [quick, deep, comprehensive]
+- name: Post
+  description: Evidence — an individual creator post backing a search result or a fit score.
+  keyed_by: creator_ids + keywords
+  operations: [getSearchResultPosts, getContentMatchPosts]
+- name: AccountUsage
+  description: Per-period metering rollup for the calling account.
+  fields:
+  - {name: period, type: string, example: '2026-05'}
+  - {name: total_calls, type: integer}
+  - {name: total_credits_charged, type: integer}
+  - {name: total_overage_usd, type: number}
+  - {name: plan_source, type: string, example: dedicated_api}
+  - {name: subscription_plan, type: string, example: API_BUILD}
+  - {name: subscription_status, type: string}
+  - {name: operations, type: 'map<cost_key, {calls, credits_charged, overage_amount_usd}>'}
+  operations: [getAccountUsage]
+relationships:
+- from: Job
+  to: Campaign
+  type: belongs_to
+  via: campaign_id
+  optional: true
+- from: Job
+  to: CreatorList
+  type: has_one
+  via: created_list_id
+  optional: true
+  note: A discovery job can materialize its approved creators into a new list.
+- from: CreatorList
+  to: Creator
+  type: has_many
+  via: creator_ids
+  through: saveCreatorsToList
+- from: Enrichment
+  to: Creator
+  type: belongs_to
+  via: creator_ids
+- from: ContentMatch
+  to: Creator
+  type: has_many
+  via: creator_ids
+- from: ContentMatch
+  to: Campaign
+  type: belongs_to
+  via: campaign targeting (content_keywords)
+  confidence: medium
+- from: AudienceMatch
+  to: Creator
+  type: has_many
+  via: creator_ids
+- from: AudienceMatch
+  to: Campaign
+  type: belongs_to
+  via: campaign targeting (target_audience_criteria)
+  confidence: medium
+- from: Post
+  to: Creator
+  type: belongs_to
+  via: creator_ids
+- from: AccountUsage
+  to: Operation
+  type: has_many
+  via: cost_key
+  note: Usage is broken down by the same cost_key values the /v1/ metadata endpoint publishes per route.
+retention:
+  result_retention_days: 30
+  source: 'Job example (result_retention_days: 30, result_expires_at)'
+  effect: Expired results return 404 NOT_FOUND and the job reaches the terminal state `expired`.
+cross_links:
+  openapi: openapi/toksta-public-api-openapi.yml
+  conventions: conventions/toksta-conventions.yml
+  errors: errors/toksta-problem-types.yml

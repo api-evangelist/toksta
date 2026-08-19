@@ -1,0 +1,106 @@
+generated: '2026-08-13'
+method: searched
+format: vendor-envelope
+source: https://help.toksta.com/public-api/getting-started
+derived_from: openapi/toksta-public-api-openapi.yml
+also_sourced_from:
+- https://help.toksta.com/public-api/authentication
+- 'live probes of https://api.toksta.com (401 and 404 bodies captured verbatim)'
+rfc9457: false
+rfc9457_note: >-
+  Toksta does NOT use RFC 9457 application/problem+json. Every error is
+  application/json carrying a normalized vendor envelope. The envelope is well
+  formed and consistently declared on all 24 named operations, but it is not the
+  IETF problem type.
+envelope:
+  media_type: application/json
+  shape: '{"success": false, "error": {"code": string, "message": string, "details": object?}, "meta": {"request_id": string, "trace_id": string?}}'
+  required: [success, error, meta]
+  discriminator_field: error.code
+  correlation_fields: [meta.request_id, meta.trace_id]
+  correlation_headers: [x-request-id, x-trace-id]
+  guidance: >-
+    The docs instruct callers to log meta.request_id when contacting support. Both
+    request_id and trace_id are also returned as response headers and are listed in
+    access-control-expose-headers, so a browser client can read them.
+  success_counterpart: '{"success": true, "data": ..., "meta": {...}}'
+declared_on: All 24 named operations declare the same 400/401/402/403/404/429/500/501 set.
+problems:
+- status: 400
+  codes: [BAD_REQUEST, VALIDATION_ERROR]
+  title: Bad request or validation error
+  meaning: A required field is missing, malformed, or fails validation.
+  retry: false
+  remediation: Fix the request body or path parameter; do not retry unchanged.
+- status: 401
+  codes: [UNAUTHORIZED]
+  title: Missing, invalid, or revoked API key
+  meaning: >-
+    No Authorization header, missing Bearer prefix, wrong key, typo, or a key that has
+    been rotated or revoked.
+  retry: false
+  remediation: >-
+    Send the header 'Authorization: Bearer tk_live_<secret>'. If the key was rotated,
+    update the secret.
+  observed_body: '{"success":false,"error":{"code":"UNAUTHORIZED","message":"Provide an API key using the Authorization: Bearer header."},"meta":{"request_id":"req_...","trace_id":"..."}}'
+- status: 402
+  codes: [INSUFFICIENT_CREDITS]
+  title: Insufficient credits for this operation
+  meaning: >-
+    The account's usable credit balance is below the cost of the requested operation.
+    Search-style routes pre-check the balance; async jobs reserve credits on accept.
+  retry: false
+  remediation: Top up PAYG credits or upgrade the plan, then retry. See plans/toksta-plans-pricing.yml.
+- status: 403
+  codes: [FORBIDDEN]
+  title: API access disabled or workspace entitlement required
+  meaning: >-
+    Three distinct causes share this code — (a) the plan cannot use the API at all
+    (Free plan or past-due billing), (b) the key's endpoint-family scope excludes this
+    route, or (c) a dedicated-API-plan key called a workspace endpoint
+    (/v1/campaigns, /v1/creator-lists), which is SaaS-only.
+  retry: false
+  remediation: Check plan entitlement, key scope, and whether the route is workspace-only.
+- status: 404
+  codes: [NOT_FOUND]
+  title: Resource not found, or result expired past retention
+  meaning: >-
+    Also returned when a job ID of the wrong FORMAT is used — the plain-UUID job
+    endpoints do not resolve prefixed content-fit:/audience-fit:/enrichment: IDs.
+  retry: false
+  remediation: Do not retry the same ID. Verify the ID format against the job-ID table in conventions/toksta-conventions.yml.
+  observed_body: '{"success":false,"error":{"code":"NOT_FOUND","message":"Endpoint not found."},"meta":{"request_id":"req_...","trace_id":"..."}}'
+- status: 429
+  codes: [RATE_LIMITED]
+  title: Rate limit exceeded
+  meaning: The per-minute request ceiling for the plan was exceeded.
+  retry: true
+  remediation: Back off for the number of seconds in Retry-After; use exponential backoff (~2s start, ~30s cap).
+  see: rate-limits/toksta-rate-limits.yml
+- status: 500
+  codes: [INTERNAL_ERROR]
+  title: Unexpected server error
+  meaning: Unhandled server-side failure.
+  retry: true
+  remediation: Retry with backoff and include meta.request_id when contacting support.
+- status: 501
+  codes: [NOT_IMPLEMENTED]
+  title: Endpoint is registered but not implemented yet
+  meaning: >-
+    Declared on every named operation. Toksta ships a route table in which an endpoint
+    can exist and be documented before its handler is live — an unusual and useful
+    honesty signal, and one an integrator must code for.
+  retry: false
+  remediation: Treat as unavailable; check the docs or /v1/ endpoint metadata before depending on the route.
+mcp_errors:
+  note: >-
+    The MCP surface reports access failures as prose states rather than this envelope —
+    "Plan not eligible", "Billing inactive", "No usable credits". Unauthenticated calls
+    to https://mcp.toksta.com/mcp return a bare OAuth error object
+    {"error":"invalid_token","error_description":"..."} with a WWW-Authenticate header,
+    NOT the REST envelope. Two surfaces, two error shapes.
+cross_links:
+  conventions: conventions/toksta-conventions.yml
+  rate_limits: rate-limits/toksta-rate-limits.yml
+  authentication: authentication/toksta-authentication.yml
+  plans: plans/toksta-plans-pricing.yml

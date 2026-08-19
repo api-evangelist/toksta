@@ -1,0 +1,112 @@
+generated: '2026-08-13'
+method: searched
+source: >-
+  Live probes of api.toksta.com, mcp.toksta.com, www.toksta.com plus
+  https://help.toksta.com/public-api/* and openapi/toksta-public-api-openapi.yml
+standards:
+- id: openapi
+  conforms: true
+  version: 3.0.3
+  evidence: >-
+    A machine-readable OpenAPI 3.0.3 document is served anonymously at
+    https://api.toksta.com/docs/json (HTTP 200, application/json) and rendered as
+    Swagger UI at https://api.toksta.com/docs. 28 operations, 24 with operationIds,
+    servers[] https://api.toksta.com, info.title "Toksta Public API".
+- id: swagger-ui
+  conforms: true
+  evidence: Interactive Swagger UI published at https://api.toksta.com/docs.
+- id: mcp
+  conforms: true
+  evidence: >-
+    Hosted remote MCP server at https://mcp.toksta.com/mcp (HTTP transport). Service
+    descriptor at the host root returns 200 JSON naming the endpoint; /health returns
+    {"ok":true,"service":"toksta-mcp","transport":"http"}. 18 tools published in the docs.
+- id: oauth2
+  conforms: true
+  evidence: >-
+    MCP is an OAuth 2.0 protected resource — authorization_code + refresh_token grants
+    against a Supabase Auth authorization server.
+- id: oauth2-pkce
+  conforms: true
+  evidence: 'code_challenge_methods_supported: [S256, plain].'
+  caveat: >-
+    `plain` is advertised alongside S256. RFC 7636 permits it, but MCP clients should
+    negotiate S256; advertising plain is a weaker posture than S256-only.
+- id: rfc8414-authorization-server-metadata
+  conforms: true
+  evidence: https://mcp.toksta.com/.well-known/oauth-authorization-server returns 200 valid JSON.
+- id: rfc9728-protected-resource-metadata
+  conforms: true
+  evidence: >-
+    https://mcp.toksta.com/.well-known/oauth-protected-resource returns 200 valid JSON,
+    and the 401 challenge carries a WWW-Authenticate header with resource_metadata.
+- id: rfc7235-www-authenticate
+  conforms: true
+  evidence: 'Unauthenticated MCP POST returns 401 with Bearer error="invalid_token" and a resource_metadata pointer.'
+- id: rfc6750-bearer-token
+  conforms: true
+  evidence: REST API uses Authorization Bearer exclusively; docs explicitly rule out query-string, cookie and X-Api-Key auth.
+- id: rfc9457-problem-details
+  conforms: false
+  evidence: >-
+    Errors are application/json with a vendor envelope
+    {"success":false,"error":{"code","message","details"},"meta":{...}} — not
+    application/problem+json. Consistent and well formed, but not the IETF media type.
+- id: rate-limit-headers
+  conforms: partial
+  evidence: >-
+    Returns the legacy X-RateLimit-Limit / X-RateLimit-Remaining / X-RateLimit-Reset
+    triple plus Retry-After, not the IETF draft RateLimit-* fields. Header names are
+    published in the docs AND advertised in access-control-expose-headers.
+- id: pagination
+  conforms: true
+  style: cursor
+  evidence: 'Search accepts cursor + limit (1-100, default 50); responses carry meta.next_cursor.'
+- id: idempotency
+  conforms: false
+  evidence: >-
+    No Idempotency-Key header and no idempotency semantics anywhere in the OpenAPI or
+    docs, on a POST-heavy credit-metered surface.
+- id: webhooks
+  conforms: false
+  evidence: 'Docs state verbatim: "Webhooks are not available in v1." Polling only.'
+- id: asyncapi
+  conforms: false
+  evidence: No event/streaming surface exists to describe; N/A rather than a gap.
+- id: graphql
+  conforms: false
+  evidence: https://api.toksta.com/graphql returns the API's JSON 404 envelope.
+- id: rfc9116-security-txt
+  conforms: false
+  evidence: /.well-known/security.txt returns 404 on api.toksta.com, mcp.toksta.com and www.toksta.com.
+- id: rfc8594-sunset-header
+  conforms: false
+  evidence: No Sunset or Deprecation headers declared; no deprecation policy published.
+- id: rfc9727-api-catalog
+  conforms: false
+  evidence: /.well-known/api-catalog returns 404 on every host.
+  note: >-
+    Functionally substituted — GET https://api.toksta.com/v1/ returns an anonymous
+    machine-readable inventory of every route with method, path, operation_id,
+    endpoint_family and cost_key. Not the RFC, but the same job.
+- id: oidc-discovery
+  conforms: false
+  evidence: /.well-known/openid-configuration returns 404 on every host.
+- id: a2a-agent-card
+  conforms: false
+  evidence: >-
+    /.well-known/agent-card.json and /.well-known/agent.json return 404 on
+    api.toksta.com, mcp.toksta.com and www.toksta.com. hub.toksta.com returns 200 for
+    both, but it is an SPA catch-all that returns the same HTML shell for every path —
+    a miss, not a card.
+- id: llms-txt
+  conforms: false
+  evidence: /llms.txt returns 404 on www.toksta.com; hub.toksta.com's 200 is the SPA shell.
+- id: tls
+  conforms: true
+  evidence: 'TLS 1.3 on www.toksta.com and api.toksta.com; HSTS max-age 31536000 on www.'
+compliance_certifications:
+  published: false
+  note: >-
+    No trust center, SOC 2 / ISO 27001 / GDPR-DPA page or named certification was found
+    on the marketing site, the help center or the API docs. No Compliance pointer emitted.

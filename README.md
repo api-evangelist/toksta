@@ -42,6 +42,26 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-toksta is a company surfaced as a portfolio company of seedcamp and added to the API Evangelist network as a stub for enrichment. This profile is a lead awaiting the enrichment pipeline.
+Toksta is a B2B influencer marketing intelligence platform. It runs a vetted database of active
+LinkedIn and YouTube B2B creators and uses AI agents to search, enrich, and score them for fit
+against a brand's campaign, then manages campaigns, creator lists, brand monitoring and reporting
+on top.
 
-Backed by: seedcamp — http://toksta.com
+Toksta publishes two machine surfaces:
+
+- **Toksta Public API v1** — `https://api.toksta.com`. A credit-metered REST API with an
+  OpenAPI 3.0.3 document served anonymously at `https://api.toksta.com/docs/json` and Swagger UI
+  at `/docs`. 28 operations across creator search and discovery, enrichment, content-match and
+  audience-match analysis jobs, post evidence, campaigns, creator lists, and account usage.
+  HTTP Bearer auth with self-serve `tk_live_` keys. Async work is **polling-only — there are no
+  webhooks in v1**.
+- **Toksta MCP Server** — `https://mcp.toksta.com/mcp`. A hosted, remote MCP server exposing 18
+  tools to Claude and ChatGPT custom connectors, protected by OAuth 2.0 with RFC 8414 and
+  RFC 9728 discovery metadata. Blocked on the Free plan; billed against the same credit balance
+  as the REST API.
+
+Docs: [help.toksta.com](https://help.toksta.com/public-api/getting-started) ·
+Pricing: [toksta.com](https://www.toksta.com/#pricing) ·
+App: [hub.toksta.com](https://hub.toksta.com)
+
+Backed by: seedcamp — https://www.toksta.com

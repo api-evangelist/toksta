@@ -1,0 +1,90 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.toksta.com/public-api/getting-started
+also_sourced_from:
+- https://help.toksta.com/public-api/legacy-partner-api-beta
+- 'https://api.toksta.com/version (live)'
+- 'https://api.toksta.com/ready (live)'
+- openapi/toksta-public-api-openapi.yml
+versioning:
+  scheme: path-prefix
+  current_version: v1
+  spec_version: 0.1.0
+  service_name: toksta-public-api
+  version_endpoint: https://api.toksta.com/version
+  version_endpoint_body: '{"name":"toksta-public-api","version":"0.1.0"}'
+  notes: >-
+    All business routes are under /v1/. System probes (/health, /ready, /version) sit
+    at the root without a version prefix. The spec itself is still 0.1.0 — a v1 URL
+    path over a 0.x document.
+predecessor:
+  name: Partner API (private beta)
+  status: replaced
+  replaced_by: Public API v1
+  docs: https://help.toksta.com/public-api/legacy-partner-api-beta
+  note: >-
+    The provider states plainly that the private-beta Partner API "has been replaced by
+    Public API v1" and points remaining beta users at support. This is a real, documented
+    migration event, not a deprecation policy.
+deprecation:
+  policy_documented: false
+  sunset_header: false
+  deprecation_header: false
+  rfc8594: false
+  notes: >-
+    No deprecation or sunset policy is published, and no Sunset/Deprecation headers are
+    declared in the OpenAPI. No operation in the spec carries deprecated: true.
+  forward_signal:
+    mechanism: 'HTTP 501 NOT_IMPLEMENTED'
+    note: >-
+      Every operation declares a 501 "Endpoint is registered but not implemented yet"
+      response. Toksta signals FORWARD lifecycle (route exists, handler not live) but
+      publishes nothing about backward lifecycle (route going away).
+status_page:
+  published: false
+  probes:
+  - url: https://status.toksta.com/
+    status: 000
+    note: Host does not resolve.
+  - url: https://toksta.statuspage.io/
+    status: 200
+    verdict: miss
+    note: >-
+      Resolves to Atlassian's Statuspage marketing site, not a Toksta status page. Not
+      a status page for this provider — recorded as a miss, no StatusPage pointer emitted.
+  self_reported_health:
+  - url: https://api.toksta.com/health
+    body: '{"status":"ok"}'
+  - url: https://api.toksta.com/ready
+    body: '{"status":"ready","environment":"production","checks":{"supabase":true,"triggerDev":true,"sentry":false,"opentelemetry":false}}'
+    note: >-
+      The readiness probe is unauthenticated and enumerates internal dependency checks.
+      It is the closest thing to a status surface Toksta publishes, and it is
+      machine-readable — but it is a liveness probe, not an incident-history page.
+changelog:
+  published: false
+  notes: >-
+    No changelog page exists in the help-center sitemap (79 URLs enumerated) and no
+    dated release notes were located on the marketing site or docs. The only version
+    signal is GET /version.
+sla:
+  documented: false
+retention:
+  documented: true
+  result_retention_days: 30
+  fields: [result_retention_days, result_expires_at]
+  source: 'GET /v1/jobs/{id} response example in openapi/toksta-public-api-openapi.yml'
+  notes: >-
+    The job object carries both result_retention_days (30 in the published example) and a
+    concrete result_expires_at timestamp, so a caller can see exactly when a result dies.
+    Past expiry the job reaches the terminal state `expired` and fetches return 404
+    "Resource not found, or result expired past retention". The 30-day figure comes from
+    the spec's example rather than from a prose retention policy — no policy page states it.
+support:
+  help_center: https://help.toksta.com
+  channel: email
+  escalation: Quote meta.request_id from the error envelope.
+cross_links:
+  conventions: conventions/toksta-conventions.yml
+  errors: errors/toksta-problem-types.yml
+  plans: plans/toksta-plans-pricing.yml

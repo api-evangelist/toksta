@@ -1,0 +1,84 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.toksta.com/public-api/getting-started
+also_sourced_from:
+- https://help.toksta.com/public-api/pricing-and-plans
+- 'probed response headers: https://api.toksta.com/v1/creators/search (401)'
+limit_count: 4
+window: 60s
+scope: per-key (plan entitlement)
+summary: >-
+  Published per-minute request ceilings that vary by plan, surfaced at runtime through
+  X-RateLimit-* headers and a Retry-After on exhaustion. The rate-limit headers are
+  explicitly listed in access-control-expose-headers on every response, including
+  anonymous 4xx responses, which is how they were confirmed without a key.
+response_headers:
+- name: X-RateLimit-Limit
+  description: Maximum requests allowed in the current 60-second window.
+- name: X-RateLimit-Remaining
+  description: Requests left in the current window.
+- name: X-RateLimit-Reset
+  description: Unix timestamp at which the window resets.
+- name: Retry-After
+  description: Present on 429 — seconds to wait before it is safe to retry.
+exhaustion:
+  http_status: 429
+  error_code: RATE_LIMITED
+  envelope: '{"success":false,"error":{"code":"RATE_LIMITED","message":"..."},"meta":{"request_id":"...","trace_id":"..."}}'
+  guidance: Back off per Retry-After. The docs recommend exponential backoff starting ~2s, capped ~30s, for job polling.
+limits:
+- scope: per-key
+  plan: API PAYG
+  ladder: dedicated-api
+  limit: 20
+  window: 1 minute
+- scope: per-key
+  plan: API Build
+  ladder: dedicated-api
+  limit: 30
+  window: 1 minute
+- scope: per-key
+  plan: API Scale
+  ladder: dedicated-api
+  limit: 60
+  window: 1 minute
+- scope: per-key
+  plan: API Enterprise
+  ladder: dedicated-api
+  limit: 150
+  window: 1 minute
+- scope: per-key
+  plan: SaaS plans with API access (Starter / Pro / Agency / PAYG)
+  ladder: saas
+  limit: 60
+  limit_note: >-
+    Not a fixed published number — the limit comes from the account entitlement field
+    rate_limit_per_minute, with a documented default fallback of 60 req/min.
+  window: 1 minute
+quota_limits:
+- scope: credit balance
+  note: >-
+    Separate from request rate. Credit exhaustion returns 402 INSUFFICIENT_CREDITS,
+    not 429. See plans/toksta-plans-pricing.yml for per-operation credit costs.
+- scope: per-account monthly
+  plan: Starter
+  limits:
+    content_fit_analyses: 50
+    audience_fit_analyses: 50
+  window: 1 month
+- scope: per-request
+  note: Creator search page size is capped at 100 (limit parameter maximum in the OpenAPI), default 50.
+- scope: per-request
+  note: Results endpoints accept wait_seconds for inline server-side polling, capped at 30 seconds.
+observed:
+- fetched: '2026-08-13'
+  url: https://api.toksta.com/v1/creators/search
+  http_status: 401
+  header: 'access-control-expose-headers: x-request-id, x-trace-id, retry-after, x-ratelimit-limit, x-ratelimit-remaining, x-ratelimit-reset'
+  note: >-
+    Header VALUES are only emitted on authenticated responses; the exposure list on an
+    anonymous response confirms the header names the API returns.
+cross_links:
+  plans: plans/toksta-plans-pricing.yml
+  errors: errors/toksta-problem-types.yml
+  conventions: conventions/toksta-conventions.yml

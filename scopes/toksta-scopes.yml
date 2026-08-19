@@ -1,0 +1,91 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.toksta.com/public-api/authentication
+docs: https://help.toksta.com/account/managing-api-keys
+also_sourced_from:
+- 'https://api.toksta.com/v1/ (live endpoint metadata, anonymous)'
+- https://help.toksta.com/public-api/getting-started
+- well-known/toksta-mcp-oauth-authorization-server.json
+model: api-key-endpoint-family
+summary: >-
+  Toksta scopes access two ways, and NEITHER is an OAuth scope string. (1) An API key
+  may be restricted at creation to a subset of ENDPOINT FAMILIES; a scoped key calling
+  a disallowed route returns 403 FORBIDDEN. (2) Plan entitlement flags gate whole
+  families regardless of key scope. The MCP server's OAuth authorization server
+  publishes no scopes_supported at all — entitlement there is plan + credit balance.
+oauth2:
+  present: true
+  authorization_server: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1
+  applies_to: https://mcp.toksta.com/mcp
+  scopes_supported: null
+  scopes_note: >-
+    The RFC 8414 metadata document declares no scopes_supported array, so there are no
+    OAuth scope strings to enumerate. Recorded as an honest null, not an empty guess.
+  see: authentication/toksta-authentication.yml
+endpoint_families:
+- family: data
+  description: Creator search, discovery, enrichment, fit analysis and post evidence.
+  routes:
+  - POST /v1/creators/search
+  - POST /v1/creators/discovery-search
+  - POST /v1/creators/thought-leaders
+  - GET /v1/creators/{id}
+  - POST /v1/creators/enrich
+  - POST /v1/creators/content-match
+  - POST /v1/creators/audience-match
+  - POST /v1/search-results/posts
+  - POST /v1/enrichments/results
+  - POST /v1/content-match/results
+  - POST /v1/content-match/posts
+  - POST /v1/audience-match/results
+  - POST /v1/audience-match/details
+  available_to: [dedicated-api plans, 'SaaS plans when api_access_enabled']
+- family: job
+  description: Async job status, results and cancellation.
+  routes:
+  - GET /v1/jobs/{id}
+  - POST /v1/jobs/results
+  - 'POST /v1/jobs/results:bulk'
+  - POST /v1/jobs/{id}/cancel
+  available_to: [dedicated-api plans, 'SaaS plans when api_access_enabled']
+- family: account
+  description: Metering and plan entitlement read-out.
+  routes:
+  - GET /v1/account/usage
+  available_to: [dedicated-api plans, 'SaaS plans when api_access_enabled']
+- family: workspace
+  description: Campaign and creator-list management inside a Toksta workspace.
+  routes:
+  - GET /v1/campaigns
+  - POST /v1/campaigns
+  - GET /v1/campaigns/{id}
+  - GET /v1/creator-lists
+  - POST /v1/creator-lists
+  - POST /v1/creator-lists/{id}/creators
+  available_to: ['SaaS plans when workspace_endpoints_enabled']
+  denied_to: [dedicated-api plans]
+  denial_response: 403 FORBIDDEN
+entitlement_flags:
+- flag: api_access_enabled
+  effect: Permits a SaaS plan to create API keys and call data/job/account families.
+- flag: workspace_endpoints_enabled
+  effect: Permits API access to the workspace family.
+- flag: rate_limit_per_minute
+  effect: Sets the per-key request ceiling; default fallback 60 req/min on SaaS.
+key_scoping:
+  supported: true
+  granularity: endpoint family
+  set_at: key creation
+  changeable: 'Not documented — rotation is the documented path to a new secret, not to new scope.'
+  violation_response: 403 FORBIDDEN
+  enumerated_scope_strings: null
+  enumerated_scope_strings_note: >-
+    The docs describe scope restriction as choosing "which endpoint families" a key may
+    call, but do not publish the literal scope identifiers used in the UI. The four
+    family names above come from the endpoint_family field the API itself returns on
+    GET /v1/, which is the authoritative machine-readable source.
+cross_links:
+  authentication: authentication/toksta-authentication.yml
+  conventions: conventions/toksta-conventions.yml
+  plans: plans/toksta-plans-pricing.yml
+  mcp: mcp/toksta-mcp.yml

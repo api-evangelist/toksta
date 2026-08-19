@@ -1,0 +1,653 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Toksta Public API",
+    "version": "0.1.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "System",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Health check",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/health"
+          },
+          "docs": "Health check"
+        },
+        {
+          "info": {
+            "name": "Readiness check",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/ready"
+          },
+          "docs": "Readiness check"
+        },
+        {
+          "info": {
+            "name": "Service version",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/version"
+          },
+          "docs": "Service version"
+        },
+        {
+          "info": {
+            "name": "List v1 endpoint metadata",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/v1/"
+          },
+          "docs": "List v1 endpoint metadata"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Creators",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Search public creators",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/creators/search",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Keyword/filter search over the public creator database. Returns a single page of creators with cursor pagination."
+        },
+        {
+          "info": {
+            "name": "Run a creator discovery search",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/creators/discovery-search",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Ranked discovery search over LinkedIn creators using keyword relevance. `keywords` is required. Returns `meta.ranking_source` (`rpc` or `fallback`)."
+        },
+        {
+          "info": {
+            "name": "Find thought leaders for a topic",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/creators/thought-leaders",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Start an async thought leaders job for a topic. Requires at least 5 keywords. Runs discovery, enrichment refresh, and recent-post content validation. Poll `GET /v1/jobs/{job_id}` and fetch results via `POST /v1/jobs/results` when status is terminal. Credits are reserved up front from `max_candidates_to_analyze` and mode (broad: 1, balanced: 2, strict: 3 credits per creator analyzed); unused credits are refunded after completion."
+        },
+        {
+          "info": {
+            "name": "Get creator details",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/v1/creators/:id",
+            "params": [
+              {
+                "name": "platform",
+                "value": "",
+                "type": "query",
+                "description": "Creator platform. Defaults to `linkedin`."
+              },
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Creator UUID."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetch a single public creator by ID, including profile metrics and (when available) enrichment."
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Enrichment",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Start creator enrichment",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/creators/enrich",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Start LinkedIn profile enrichment for a creator selection. Requires a user-scoped key.\n\n**Selection (provide exactly one):** `creator_ids` (array of UUIDs), `result_set_id` (string), or `result_set_ids` (array). `creator_ids` takes precedence. This endpoint does NOT accept `creators: [{ profile_url }]`.\n\n**Synchronous completion:** if every requested creator is already enriched, the response is `200` with `jobs_created: 0` and `all_complete: true` — no job IDs are returned. Otherwise the respons"
+        },
+        {
+          "info": {
+            "name": "Get enrichment results",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/enrichments/results",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetch enrichment results for a creator selection.\n\n**Selection (provide one):** `creator_ids` (array of UUIDs), `result_set_id`, or `result_set_ids`. Because enrichment can complete synchronously (no job IDs), `creator_ids` is the reliable way to retrieve results. Set `detail_level: \"full\"` to include the `results` array with extended fields. Use `wait_seconds` to poll inline."
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Analysis",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Start content match analysis",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/creators/content-match",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Start LinkedIn content-fit analysis for a creator selection. Requires a user-scoped key.\n\n**Selection (provide exactly one):** `creator_ids`, `result_set_id`, or `result_set_ids`.\n\n**Topic criteria:** for ad hoc runs (no `campaign_id`) you MUST provide `topic_keywords` (array of strings). The field is `topic_keywords`, NOT `topics`. When `campaign_id` is supplied, criteria are read from the campaign instead.\n\nReturns `202` with **prefixed** job IDs in the form `content-fit:<uuid>` under `data.jo"
+        },
+        {
+          "info": {
+            "name": "Start audience match analysis",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/creators/audience-match",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Start LinkedIn audience-fit analysis for a creator selection. Requires a user-scoped key.\n\n**Selection (provide exactly one):** `creator_ids`, `result_set_id`, or `result_set_ids`.\n\n**Audience criteria:** for ad hoc runs (no `campaign_id`) provide at least one of `campaign_brief`, `target_audience`, `audience_keywords` (array), or `target_audience_criteria` (array). When `campaign_id` is set, criteria are read from the campaign.\n\nReturns `202` with **prefixed** job IDs in the form `audience-fit:"
+        },
+        {
+          "info": {
+            "name": "Get content match results",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/content-match/results",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetch content-match analysis results.\n\n**Two selection modes:**\n1. By job: `job_id` (string) or `job_ids` (array). Accepts the prefixed form `content-fit:<uuid>` or the bare analysis UUID.\n2. By creators: `creator_ids`/`result_set_id`/`result_set_ids` (optionally with `campaign_id`) to fetch the latest saved analysis per creator.\n\n`detail_level: \"full\"` adds the `results` array. Use `wait_seconds` to poll inline."
+        },
+        {
+          "info": {
+            "name": "Get content match evidence posts",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/content-match/posts",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetch the matched posts (evidence) for content-match analyses. Same selection modes as `/v1/content-match/results` (`job_id`/`job_ids` accepting `content-fit:<uuid>` or bare UUID, or `creator_ids`/result sets + optional `campaign_id`)."
+        },
+        {
+          "info": {
+            "name": "Get audience match results",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/audience-match/results",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetch audience-match analysis results. Same dual selection model as content match: `job_id`/`job_ids` (accepting `audience-fit:<uuid>` or bare UUID) OR `creator_ids`/result sets + optional `campaign_id`. `detail_level: \"full\"` adds the `results` array."
+        },
+        {
+          "info": {
+            "name": "Get audience match details",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/audience-match/details",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetch detailed audience-match breakdowns (top engagers, companies, job titles, geography). Same selection model as `/v1/audience-match/results`. `engagers_limit` controls how many engagers are returned."
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Jobs",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get job status",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/v1/jobs/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Job UUID (plain, unprefixed)."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Get the status of a creator-discovery job. The `{id}` path parameter must be a **plain UUID** (no prefix). NOTE: content-fit / audience-fit / enrichment jobs are NOT retrievable here — use their dedicated results endpoints."
+        },
+        {
+          "info": {
+            "name": "Get one job result",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/jobs/results",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetch the full result of one creator-discovery job. `job_id` must be a **plain UUID** (not prefixed). Use `limit` (alias `results_limit`, max 200) to cap the number of candidate rows returned."
+        },
+        {
+          "info": {
+            "name": "Get multiple job results",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/jobs/results:bulk",
+            "params": [
+              {
+                "name": "bulk",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetch results for multiple creator-discovery jobs in one call.\n\n**URL:** `POST /v1/jobs/results:bulk` (note the `:bulk` action suffix).\n\nBody requires `job_ids`: an array of 1-20 **plain UUIDs** (not prefixed). Each entry in the response carries `found` plus the job result or a per-job error."
+        },
+        {
+          "info": {
+            "name": "Cancel a running job",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/jobs/:id/cancel",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Job UUID (plain, unprefixed)."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Cancel a running creator-discovery job. The `{id}` path parameter must be a **plain UUID**. A JSON body is required even when empty — send `{}` (sending no body returns `400 Request body must be valid JSON`). Already-terminal jobs return `canceled: false` with a `reason`."
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Account",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get account usage",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/v1/account/usage",
+            "params": [
+              {
+                "name": "month",
+                "value": "",
+                "type": "query",
+                "description": "Month in `YYYY-MM` format. Defaults to the current month."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Usage and credit summary for the current billing month (or a specific `month`)."
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Campaigns",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List campaigns",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/v1/campaigns",
+            "params": [
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (1-100). Defaults to 50."
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "Result offset. Defaults to 0."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "List campaigns owned by the key's user. **SaaS workspace entitlement required** — dedicated API keys receive an empty list."
+        },
+        {
+          "info": {
+            "name": "Create a campaign",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/campaigns",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Create a campaign. **SaaS workspace entitlement required** — dedicated API keys receive `403`.\n\n`name`, `content_keywords` (≥1), and `target_audience_criteria` (≥1) are required."
+        },
+        {
+          "info": {
+            "name": "Get campaign details",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/v1/campaigns/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Campaign UUID."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Get a campaign by ID. **SaaS workspace entitlement required.**"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Creator Lists",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List creator lists",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.toksta.com/v1/creator-lists",
+            "params": [
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (1-100). Defaults to 50."
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "Result offset. Defaults to 0."
+              },
+              {
+                "name": "platform",
+                "value": "",
+                "type": "query",
+                "description": "Optional platform filter."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "List creator lists owned by the key's user. **SaaS workspace entitlement required** — dedicated API keys receive an empty list."
+        },
+        {
+          "info": {
+            "name": "Create a creator list",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/creator-lists",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Create a creator list. **SaaS workspace entitlement required** — dedicated API keys receive `403`. `name` is required."
+        },
+        {
+          "info": {
+            "name": "Save creators to a list",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/creator-lists/:id/creators",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Creator list UUID."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Add creators to an existing creator list. **SaaS workspace entitlement required.** The `{id}` path parameter must be the list UUID. This endpoint only saves to an existing list — create one first with `POST /v1/creator-lists`. `creator_ids` (≥1 valid UUID, max 100) is required."
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Evidence",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get posts behind search results",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.toksta.com/v1/search-results/posts",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Return the LinkedIn posts behind search results (keyword evidence) for a creator selection.\n\n**Keywords:** provide `keywords` (array of strings) OR a `result_set_id`/`result_set_ids` (keywords are then inferred from the saved search). Sending `creator_ids` alone, with no keywords and no result set, returns `400`."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

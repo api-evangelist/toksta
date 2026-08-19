@@ -1,0 +1,140 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.toksta.com/public-api/getting-started
+also_sourced_from:
+- https://help.toksta.com/public-api/authentication
+- https://help.toksta.com/public-api/pricing-and-plans
+- openapi/toksta-public-api-openapi.yml
+- 'https://api.toksta.com/v1/ (live endpoint-metadata document)'
+summary: >-
+  Cross-cutting request/response semantics for the Toksta Public API v1. The API is a
+  credit-metered, POST-heavy, job-oriented REST surface with a normalized success/error
+  envelope, cursor pagination, per-plan rate limiting, and polling-only async. Two
+  things an integrator must plan for and that are easy to miss: there are NO webhooks,
+  and job identifiers are NOT uniform across analysis families.
+base_url: https://api.toksta.com/v1
+system_probe_base: https://api.toksta.com
+system_probe_note: /health, /ready and /version sit at the root WITHOUT the /v1 prefix.
+authentication:
+  style: http_bearer
+  header: 'Authorization: Bearer tk_live_<secret>'
+  content_type_required: application/json
+  see: authentication/toksta-authentication.yml
+envelope:
+  success: '{"success": true, "data": ..., "meta": {...}}'
+  error: '{"success": false, "error": {"code","message","details"}, "meta": {"request_id","trace_id"}}'
+  consistent: true
+  see: errors/toksta-problem-types.yml
+idempotency:
+  documented: false
+  supported: false
+  note: >-
+    No Idempotency-Key header, no idempotency section, and no occurrence of the word
+    "idempotent" anywhere in the OpenAPI or the published docs. This matters more than
+    usual here because the surface is POST-heavy and credit-metered: a retried
+    POST /v1/creators/enrich or /content-match can charge twice. The docs' only
+    mitigation is procedural — "do not resubmit the same start POST unless the job
+    failed" — which puts the whole burden on the caller.
+  mitigations_published:
+  - Re-running enrichment for already-enriched creators returns 200 with jobs_created 0 and all_complete true rather than re-charging.
+  - Thought-leader credits are reserved up front and unused credits are refunded after completion.
+pagination:
+  style: cursor
+  request_params:
+    cursor: Opaque cursor taken from the previous response.
+    limit: Page size, 1-100, default 50.
+  response_fields:
+    next_cursor: meta.next_cursor
+  sorting:
+    sort_by: [followers_count, engagement_rate, avg_posts_per_month, avg_views_per_post, shares_per_post, comments_per_post, reactions_per_post, name, updated_at]
+    sort_order: [asc, desc]
+    defaults: 'sort_by followers_count, sort_order desc'
+async:
+  model: polling-only
+  webhooks: false
+  webhooks_note: 'Verbatim from the docs: "Webhooks are not available in v1."'
+  inline_wait:
+    param: wait_seconds
+    max: 30
+    note: Results endpoints accept wait_seconds for a short server-side inline poll.
+  backoff: 'Exponential — start ~2s, cap ~30s. Retry results calls on 5xx and 429.'
+  terminal_states: [succeeded, failed, canceled, expired]
+  non_terminal_states: [queued, running, pending]
+  job_id_formats:
+  - family: Creator discovery / thought leaders
+    start: POST /v1/creators/thought-leaders
+    id_format: plain UUID
+    retrieve_with: ['GET /v1/jobs/{id}', 'POST /v1/jobs/results', 'POST /v1/jobs/results:bulk']
+  - family: Enrichment
+    start: POST /v1/creators/enrich
+    id_format: 'enrichment:<uuid> (informational only)'
+    retrieve_with: ['POST /v1/enrichments/results with the original creator_ids']
+    note: Enrichment has NO standalone job-status endpoint; re-query the results endpoint.
+  - family: Content match
+    start: POST /v1/creators/content-match
+    id_format: 'content-fit:<uuid>'
+    retrieve_with: ['POST /v1/content-match/results', 'POST /v1/content-match/posts']
+    note: Both the prefixed ID and the bare UUID are accepted.
+  - family: Audience match
+    start: POST /v1/creators/audience-match
+    id_format: 'audience-fit:<uuid>'
+    retrieve_with: ['POST /v1/audience-match/results', 'POST /v1/audience-match/details']
+    note: Both the prefixed ID and the bare UUID are accepted.
+  cross_family_trap: >-
+    The generic job endpoints accept plain UUIDs ONLY. Passing a content-fit /
+    audience-fit / enrichment ID to GET /v1/jobs/{id} returns 404, not a helpful error.
+  quirks:
+  - 'POST /v1/jobs/{id}/cancel requires a JSON body even when empty — send {}.'
+rate_limiting:
+  headers: [X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After]
+  window: 60s
+  see: rate-limits/toksta-rate-limits.yml
+metering:
+  unit: credit
+  response_header: X-Toksta-Credit-Cost
+  header_note: May be present on billable responses, carrying the credit cost of that operation.
+  balance_endpoint: GET /v1/account/usage
+  exhaustion: 402 INSUFFICIENT_CREDITS
+  see: plans/toksta-plans-pricing.yml
+tracing:
+  request_id_header: x-request-id
+  trace_id_header: x-trace-id
+  in_body: meta.request_id, meta.trace_id
+  cors_exposed: true
+  cors_exposed_header: 'access-control-expose-headers: x-request-id, x-trace-id, retry-after, x-ratelimit-limit, x-ratelimit-remaining, x-ratelimit-reset'
+  guidance: Log meta.request_id and quote it to support.
+versioning:
+  style: path-prefix
+  current: v1
+  spec_version: 0.1.0
+  discovery: 'GET /v1/ returns a live machine-readable endpoint inventory (method, path, operation_id, endpoint_family, cost_key) with no auth required.'
+  see: lifecycle/toksta-lifecycle.yml
+entitlement_model:
+  endpoint_families: [data, job, account, workspace]
+  family_source: 'GET /v1/ endpoint metadata — every route carries an endpoint_family and a cost_key.'
+  rules:
+  - Dedicated API plans (PAYG/Build/Scale/Enterprise) may call data, job and account families only; workspace returns 403.
+  - Workspace family (/v1/campaigns, /v1/creator-lists) requires a SaaS plan with workspace_endpoints_enabled.
+  - SaaS plans reach data endpoints when api_access_enabled.
+  see: scopes/toksta-scopes.yml
+field_expansion:
+  supported: false
+  note: No sparse-fieldset or expand parameter is documented or declared.
+filtering:
+  style: structured filters object in the POST body
+  note: >-
+    Search filters are nested under a `filters` object (content_categories,
+    target_audiences, languages, locations, hide_brands, and min/max bands for
+    followers, engagement, posts per month, reactions, comments, shares).
+media_types:
+  request: application/json
+  response: application/json
+cross_links:
+  authentication: authentication/toksta-authentication.yml
+  errors: errors/toksta-problem-types.yml
+  rate_limits: rate-limits/toksta-rate-limits.yml
+  lifecycle: lifecycle/toksta-lifecycle.yml
+  scopes: scopes/toksta-scopes.yml
+  plans: plans/toksta-plans-pricing.yml
+  data_model: data-model/toksta-data-model.yml
+  mcp: mcp/toksta-mcp.yml

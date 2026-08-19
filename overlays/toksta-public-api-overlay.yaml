@@ -1,0 +1,124 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for the Toksta Public API
+  version: 1.0.0
+x-generated: '2026-08-13'
+x-method: generated
+x-source: >-
+  Enhancements captured from https://help.toksta.com/public-api/* and live probes of
+  api.toksta.com, applied over openapi/toksta-public-api-openapi.yml (harvested verbatim
+  from https://api.toksta.com/docs/json). The original spec is never mutated.
+extends: ../openapi/toksta-public-api-openapi.yml
+actions:
+- target: $.info
+  description: >-
+    Add contact and documentation pointers the published spec omits, and record the
+    provenance of this document.
+  update:
+    contact:
+      name: Toksta Support
+      url: https://help.toksta.com
+    x-api-evangelist:
+      harvested_from: https://api.toksta.com/docs/json
+      harvested: '2026-08-13'
+      docs: https://help.toksta.com/public-api/getting-started
+      swagger_ui: https://api.toksta.com/docs
+- target: $.externalDocs
+  description: Attach external documentation, absent from the published spec.
+  update:
+    description: Toksta Public API documentation
+    url: https://help.toksta.com/public-api/getting-started
+- target: $.servers[0]
+  description: Describe the single production server.
+  update:
+    description: Production. /v1 routes hang off this root; /health, /ready and /version sit at the root unversioned.
+- target: $
+  description: >-
+    Declare the API-wide default security. The published spec sets security per-operation
+    but declares no top-level default, so a generated client can read the API as open.
+  update:
+    security:
+    - bearerAuth: []
+    x-rate-limit:
+      window: 60s
+      headers: [X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After]
+      exhausted_status: 429
+      by_plan:
+        API PAYG: 20/min
+        API Build: 30/min
+        API Scale: 60/min
+        API Enterprise: 150/min
+        SaaS (default fallback): 60/min
+    x-metering:
+      unit: credit
+      response_header: X-Toksta-Credit-Cost
+      balance_operation: getAccountUsage
+      exhausted_status: 402
+      exhausted_code: INSUFFICIENT_CREDITS
+    x-idempotency:
+      supported: false
+      note: >-
+        No idempotency key is offered on a POST-heavy, credit-metered surface. Retrying a
+        start-POST can charge twice. Callers must deduplicate.
+    x-webhooks:
+      supported: false
+      note: 'Docs state verbatim: "Webhooks are not available in v1." Async is polling only.'
+    x-pagination:
+      style: cursor
+      request: [cursor, limit]
+      response: meta.next_cursor
+      limit_max: 100
+      limit_default: 50
+    x-error-envelope:
+      media_type: application/json
+      rfc9457: false
+      shape: '{"success": false, "error": {"code","message","details"}, "meta": {"request_id","trace_id"}}'
+      correlation_headers: [x-request-id, x-trace-id]
+- target: $.components.securitySchemes.bearerAuth
+  description: Document the real key shape, issuance path and scoping behaviour.
+  update:
+    description: >-
+      Self-serve API key issued from hub.toksta.com (Account -> API keys). Format
+      tk_live_ followed by 48 hex characters, revealed once at creation; Toksta stores
+      only a SHA-256 hash. Send as 'Authorization: Bearer tk_live_<secret>'. Query-string,
+      cookie and X-Api-Key auth are explicitly NOT supported. A key may be restricted to a
+      subset of endpoint families at creation; a disallowed route returns 403 FORBIDDEN.
+      Requires a dedicated API plan or a SaaS plan with api_access_enabled — Free plans
+      cannot create keys.
+    x-key-prefix: tk_live_
+    x-issuance: https://hub.toksta.com/account#api-keys
+    x-docs: https://help.toksta.com/public-api/authentication
+- target: $.paths['/v1/jobs/results{bulk}']
+  description: >-
+    Flag a path-template defect. The real route published by the API's own endpoint
+    metadata and by the docs is /v1/jobs/results:bulk — a literal colon segment. The spec
+    writes it as results{bulk}, which OpenAPI tooling reads as an undeclared path
+    parameter named `bulk`, so generated clients will emit the wrong URL.
+  update:
+    x-api-evangelist-defect:
+      kind: path-template
+      declared: /v1/jobs/results{bulk}
+      actual: /v1/jobs/results:bulk
+      evidence: https://api.toksta.com/v1/ (endpoint metadata) and https://help.toksta.com/public-api/getting-started
+      impact: Generated clients will build an incorrect path or fail parameter validation.
+- target: $.tags
+  description: Declare the tag set used across operations, which the published spec leaves undeclared.
+  update:
+  - name: System
+    description: Unauthenticated liveness, readiness, version and endpoint-metadata probes.
+  - name: Creators
+    description: Creator search, discovery and profile retrieval.
+  - name: Enrichment
+    description: Creator enrichment jobs and results.
+  - name: Analysis
+    description: Content-fit and audience-fit analysis jobs and results.
+  - name: Evidence
+    description: Post-level evidence behind search and fit results.
+  - name: Jobs
+    description: Async job status, results and cancellation.
+  - name: Campaigns
+    description: Workspace campaigns (SaaS entitlement required).
+  - name: Creator Lists
+    description: Workspace creator lists (SaaS entitlement required).
+  - name: Account
+    description: Metering and plan entitlement.

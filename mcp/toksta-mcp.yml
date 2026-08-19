@@ -1,0 +1,176 @@
+generated: '2026-08-13'
+method: searched
+status: published
+source: https://help.toksta.com/mcp/mcp-server
+also_sourced_from:
+- https://help.toksta.com/account/managing-mcp-access
+- https://mcp.toksta.com/ (service descriptor, HTTP 200)
+- https://mcp.toksta.com/.well-known/oauth-protected-resource
+deployment:
+  mode: remote
+  endpoint: https://mcp.toksta.com/mcp
+  auth: oauth
+  verified: probed
+  note: >-
+    Hosted, remote, HTTP-transport MCP server. No stdio package, no npx installer and
+    no published client library exist — npm, PyPI and the provider's GitHub presence
+    were all searched and returned nothing (see packages/toksta-packages.yml). An agent
+    reaches this server by URL after an OAuth sign-in; there is nothing to install.
+server:
+  name: toksta-mcp
+  transport: http
+  url: https://mcp.toksta.com/mcp
+  service_descriptor: https://mcp.toksta.com/
+  health_url: https://mcp.toksta.com/health
+  app_url: https://hub.toksta.com
+  signup_url: https://hub.toksta.com/signup
+  setup: 'In-app: Account -> MCP section, then paste the endpoint into the client connector.'
+  documented_clients:
+  - Claude custom connectors
+  - ChatGPT custom connectors
+auth:
+  methods:
+  - oauth2
+  oauth2:
+    protected_resource_metadata: https://mcp.toksta.com/.well-known/oauth-protected-resource
+    resource: https://mcp.toksta.com/mcp
+    resource_name: Toksta MCP Server
+    authorization_server: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1
+    authorization_endpoint: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1/oauth/authorize
+    token_endpoint: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1/oauth/token
+    registration_endpoint: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1/oauth/clients/register
+    grant_types: [authorization_code, refresh_token]
+    pkce: [S256, plain]
+    scopes_supported: null
+    discovery: well-known/toksta-mcp-oauth-authorization-server.json
+introspection:
+  attempted: true
+  method: 'POST /mcp {"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+  http_status: 401
+  www_authenticate: 'Bearer error="invalid_token", error_description="Missing Authorization header", resource_metadata="https://mcp.toksta.com/.well-known/oauth-protected-resource/mcp"'
+  verdict: gated
+  control_probe:
+    url: https://mcp.toksta.com/zzz-not-a-real-path
+    status: 404
+    body: 'Cannot GET /zzz-not-a-real-path (HTML)'
+    discriminates: true
+    note: >-
+      The host discriminates — a path that cannot exist returns 404 HTML while /mcp
+      returns a 401 JSON OAuth challenge. The MCP surface is therefore proven to exist
+      and to be authentication-gated, not merely opaque.
+  tool_schemas: >-
+    inputSchema for each tool requires an authenticated tools/list call and is NOT
+    captured here. The tool NAMES and descriptions below are transcribed verbatim from
+    the provider's published MCP Tools Reference, not inferred.
+entitlement:
+  gate: plan + credit balance, not OAuth scope
+  plans:
+  - plan: Free
+    mcp_access: false
+    note: MCP is blocked on Free.
+  - plan: PAYG
+    mcp_access: true
+    note: Requires positive usable credits.
+  - plan: Starter
+    mcp_access: true
+    note: Requires active/trialing/canceling subscription status and positive usable credits.
+  - plan: Pro
+    mcp_access: true
+    note: Requires active/trialing/canceling subscription status and positive usable credits.
+  - plan: Agency
+    mcp_access: true
+    note: Requires active/trialing/canceling subscription status and positive usable credits.
+  blocked_states:
+  - 'Plan not eligible: MCP is available on PAYG, Starter, Pro and Agency.'
+  - 'Billing inactive: subscription billing state must be resolved.'
+  - 'No usable credits: add credits or wait for the monthly renewal.'
+  connector_fee: none
+  billing: Usage is billed against the same Toksta credit balance as the REST API.
+tool_count: 18
+tools:
+- name: get_campaigns
+  category: campaigns
+  description: List campaigns available in your account.
+  credit_cost: 0
+- name: get_campaign_details
+  category: campaigns
+  description: Open one campaign with full targeting criteria.
+  credit_cost: 0
+- name: create_campaign
+  category: campaigns
+  description: Create a campaign from your brief and targeting inputs.
+  credit_cost: 0
+- name: search_creators
+  category: discovery
+  description: Find creators using platform, keyword, location, follower and engagement filters.
+  credit_cost: 0
+- name: get_search_result_posts
+  category: discovery
+  description: Pull post evidence behind search matches.
+  credit_cost: 0
+- name: get_creator_details
+  category: discovery
+  description: Load a single creator profile in detail.
+  credit_cost: 0
+- name: get_creator_lists
+  category: lists
+  description: List existing creator lists in your account.
+  credit_cost: 0
+- name: save_creators_to_list
+  category: lists
+  description: Save creators into an existing list or create a new list.
+  credit_cost: 0
+- name: enrich_creators
+  category: enrichment
+  description: Start enrichment for selected creators.
+  credit_cost: 1 credit per creator
+- name: get_enrichment_results
+  category: enrichment
+  description: Fetch completed enrichment output.
+  credit_cost: 0
+- name: analyze_content_fit
+  category: analysis
+  description: Start content-fit scoring against campaign topics.
+  credit_cost: 3, 5 or 8 credits per creator (10, 20 or 30 posts analyzed)
+- name: get_content_fit_posts
+  category: analysis
+  description: Fetch post snippets from completed content-fit runs.
+  credit_cost: 0
+- name: analyze_audience_fit
+  category: analysis
+  description: Start audience-fit scoring against target audience criteria.
+  credit_cost: 10, 20 or 30 credits per creator (quick scan, deep dive, comprehensive)
+- name: get_audience_fit_details
+  category: analysis
+  description: Fetch saved audience-fit details from completed runs.
+  credit_cost: 0
+- name: get_job_status
+  category: jobs
+  description: Check current status of a fit-analysis job.
+  credit_cost: 0
+- name: get_job_results
+  category: jobs
+  description: Fetch one completed job result.
+  credit_cost: 0
+- name: get_bulk_job_results
+  category: jobs
+  description: Fetch multiple completed job results.
+  credit_cost: 0
+- name: cancel_job
+  category: jobs
+  description: Cancel an in-progress fit-analysis job.
+  credit_cost: 0
+usage_caps:
+- plan: Starter
+  content_fit: 50 analyses per month
+  audience_fit: 50 analyses per month
+documented_workflow:
+- Start from a campaign brief.
+- Search creators and validate with post evidence.
+- Enrich shortlisted creators with metrics.
+- Run audience-fit and content-fit before outreach.
+cross_links:
+  crosswalk: mcp/toksta-tool-crosswalk.yml
+  authentication: authentication/toksta-authentication.yml
+  plans: plans/toksta-plans-pricing.yml
+  well_known: well-known/toksta-well-known.yml

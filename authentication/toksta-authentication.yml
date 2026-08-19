@@ -1,0 +1,100 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.toksta.com/public-api/authentication
+docs: https://help.toksta.com/public-api/authentication
+also_sourced_from:
+- https://help.toksta.com/account/managing-api-keys
+- https://help.toksta.com/public-api/getting-started
+- https://mcp.toksta.com/.well-known/oauth-authorization-server
+- https://mcp.toksta.com/.well-known/oauth-protected-resource
+- openapi/toksta-public-api-openapi.yml
+summary:
+  types:
+  - http
+  - oauth2
+  http_schemes:
+  - bearer
+  oauth2_flows:
+  - authorizationCode
+  note: >-
+    Two distinct surfaces with two distinct auth models. The Public REST API
+    (api.toksta.com) uses HTTP Bearer with a self-serve, one-time-reveal API key.
+    The hosted MCP server (mcp.toksta.com/mcp) uses OAuth 2.0 against a Supabase
+    Auth authorization server, advertised via RFC 8414 + RFC 9728 metadata.
+schemes:
+- name: bearerAuth
+  type: http
+  scheme: bearer
+  bearerFormat: API key
+  in: header
+  parameter_name: Authorization
+  applies_to: https://api.toksta.com/v1/
+  key_prefix: tk_live_
+  key_shape: 'tk_live_ followed by 48 hex characters'
+  storage: >-
+    Toksta stores only a SHA-256 hash of the key; the secret is displayed once at
+    creation and cannot be recovered afterwards.
+  issuance: Self-serve from the app at hub.toksta.com — Account -> API keys (/account#api-keys).
+  eligibility: >-
+    Requires an active dedicated API plan (PAYG, Build, Scale, Enterprise) or a SaaS
+    plan (Starter, Pro, Agency, PAYG) with api_access_enabled. Free plans cannot
+    create API keys.
+  rotation: >-
+    Rotation issues a new secret (shown once) and immediately revokes the previous
+    key. Revoked keys return 401 UNAUTHORIZED.
+  scoping: >-
+    A key may be restricted to a subset of endpoint families at creation. A scoped
+    key calling a disallowed route returns 403 FORBIDDEN. See scopes/toksta-scopes.yml.
+  negative_facts:
+  - No query-string API key auth.
+  - No cookie auth.
+  - No X-Api-Key header — the docs state Authorization Bearer is the only accepted form.
+  sources:
+  - https://help.toksta.com/public-api/authentication
+  - openapi/toksta-public-api-openapi.yml
+- name: mcpOAuth
+  type: oauth2
+  applies_to: https://mcp.toksta.com/mcp
+  description: >-
+    The hosted Toksta MCP server is an OAuth 2.0 protected resource. Unauthenticated
+    POSTs to /mcp return 401 with a WWW-Authenticate Bearer challenge carrying
+    resource_metadata, and the resource metadata names a Supabase Auth authorization
+    server. Dynamic client registration is advertised.
+  flows:
+  - flow: authorizationCode
+    issuer: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1
+    authorization_endpoint: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1/oauth/authorize
+    token_endpoint: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1/oauth/token
+    registration_endpoint: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1/oauth/clients/register
+    grant_types: [authorization_code, refresh_token]
+    response_types: [code]
+    pkce: [S256, plain]
+    token_endpoint_auth_methods: [client_secret_basic, client_secret_post, none]
+    scopes_supported: null
+    scopes_note: >-
+      The authorization-server metadata document declares no scopes_supported. Entitlement
+      is enforced by plan/credit state rather than by OAuth scope — see mcp/toksta-mcp.yml.
+  sources:
+  - well-known/toksta-mcp-oauth-authorization-server.json
+  - well-known/toksta-mcp-oauth-protected-resource.json
+observed:
+- probe: 'POST https://api.toksta.com/v1/creators/search (no Authorization header)'
+  http_status: 401
+  body: '{"success":false,"error":{"code":"UNAUTHORIZED","message":"Provide an API key using the Authorization: Bearer header."},...}'
+  fetched: '2026-08-13'
+- probe: 'POST https://mcp.toksta.com/mcp (tools/list, no Authorization header)'
+  http_status: 401
+  www_authenticate: 'Bearer error="invalid_token", error_description="Missing Authorization header", resource_metadata="https://mcp.toksta.com/.well-known/oauth-protected-resource/mcp"'
+  fetched: '2026-08-13'
+security_guidance_published:
+- Call the API server-to-server only; never embed keys in browser or mobile clients.
+- Store keys in a secrets manager, not in source control.
+- Use a separate key per integration or service.
+- Rotate on a schedule and after team-member offboarding.
+- Monitor consumption via GET /v1/account/usage.
+cross_links:
+  scopes: scopes/toksta-scopes.yml
+  conventions: conventions/toksta-conventions.yml
+  errors: errors/toksta-problem-types.yml
+  mcp: mcp/toksta-mcp.yml
+  well_known: well-known/toksta-well-known.yml

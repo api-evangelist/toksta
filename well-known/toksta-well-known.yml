@@ -1,0 +1,114 @@
+generated: '2026-08-13'
+method: probed
+source: live probes of /.well-known/ across every Toksta host
+note: >-
+  Two real documents are served, both by the MCP host: RFC 8414 authorization-server
+  metadata and RFC 9728 protected-resource metadata. Everything else 404s. IMPORTANT:
+  hub.toksta.com is a single-page app whose catch-all answers HTTP 200 with the same
+  HTML shell for EVERY path, including every /.well-known/* path probed. Those 200s
+  are NOT documents and are recorded here as misses.
+hosts:
+- host: https://mcp.toksta.com
+  documents:
+  - path: /.well-known/oauth-authorization-server
+    status: 200
+    content_type: application/json
+    file: toksta-mcp-oauth-authorization-server.json
+    rfc: RFC 8414
+  - path: /.well-known/oauth-protected-resource
+    status: 200
+    content_type: application/json
+    file: toksta-mcp-oauth-protected-resource.json
+    rfc: RFC 9728
+  - path: /.well-known/oauth-protected-resource/mcp
+    status: 200
+    content_type: application/json
+    note: Per-resource variant referenced by the WWW-Authenticate challenge; same body as the root document.
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/ai-plugin.json
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+  - path: /.well-known/mcp.json
+    status: 404
+- host: https://api.toksta.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/oauth-authorization-server
+    status: 404
+  - path: /.well-known/oauth-protected-resource
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/ai-plugin.json
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+- host: https://www.toksta.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/oauth-authorization-server
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/ai-plugin.json
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+- host: https://hub.toksta.com
+  spa_catch_all: true
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    verdict: miss
+    note: SPA shell HTML, not a document. Every probed path on this host returns the same 200 HTML.
+  - path: /.well-known/openid-configuration
+    status: 200
+    verdict: miss
+    note: SPA shell HTML, not a document.
+  - path: /.well-known/oauth-authorization-server
+    status: 200
+    verdict: miss
+    note: SPA shell HTML, not a document.
+  - path: /.well-known/api-catalog
+    status: 200
+    verdict: miss
+    note: SPA shell HTML, not a document.
+  - path: /.well-known/ai-plugin.json
+    status: 200
+    verdict: miss
+    note: SPA shell HTML, not a document.
+  - path: /.well-known/agent-card.json
+    status: 200
+    verdict: miss
+    note: SPA shell HTML, not a document. Control probe of an invented path returns the same 200 shell.
+  - path: /.well-known/agent.json
+    status: 200
+    verdict: miss
+    note: SPA shell HTML, not a document.
+summary:
+  real_documents: 2
+  security_txt: false
+  openid_configuration: false
+  oauth_authorization_server: true
+  oauth_protected_resource: true
+  api_catalog: false
+  ai_plugin: false
+  agent_card: false

@@ -1,0 +1,189 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.toksta.com/public-api/pricing-and-plans
+also_sourced_from:
+- https://www.toksta.com/#pricing
+- https://help.toksta.com/mcp/mcp-server
+currency: USD
+plan_count: 9
+note: >-
+  Toksta publishes TWO distinct plan ladders. A SaaS ladder (Free / PAYG / Starter /
+  Pro / Agency) sold on the marketing site, where API and MCP access are a feature of
+  the paid tiers, and a separate DEDICATED API ladder (API PAYG / Build / Scale /
+  Enterprise) sold in-app at hub.toksta.com/api-pricing. The dedicated ladder is
+  data-only: workspace endpoints (/v1/campaigns, /v1/creator-lists) return 403 on it.
+  Everything below is quoted from the provider's own published tables.
+billing_model:
+  unit: credit
+  metering: per operation
+  subscription_credits: Reset each billing cycle.
+  purchased_credits: PAYG top-up credits never expire.
+  consumption_order: Monthly subscription credits are consumed before purchased credits.
+  minimum_topup_usd: 10
+  overage: Charged at the plan's per-credit overage rate once included credits are exhausted.
+  exhaustion_response: 'HTTP 402 with error.code = INSUFFICIENT_CREDITS'
+  cost_header: X-Toksta-Credit-Cost
+  cost_header_note: Billable responses may include this header carrying the credit cost of that operation.
+ladders:
+- ladder: dedicated-api
+  pricing_url: https://hub.toksta.com/api-pricing
+  docs: https://help.toksta.com/public-api/pricing-and-plans
+  scope: Data-only integrations. Workspace endpoints return 403.
+  plans:
+  - name: API PAYG
+    price: 0
+    billing_period: month
+    included_credits: 0
+    included_note: Buy credits as needed; purchased credits are non-expiring.
+    overage_rate_usd_per_credit: 0.05
+    rate_limit_per_minute: 20
+  - name: API Build
+    price: 29
+    billing_period: month
+    included_credits: 1000
+    overage_rate_usd_per_credit: 0.025
+    rate_limit_per_minute: 30
+  - name: API Scale
+    price: 99
+    billing_period: month
+    included_credits: 5000
+    overage_rate_usd_per_credit: 0.018
+    rate_limit_per_minute: 60
+  - name: API Enterprise
+    price: 299
+    billing_period: month
+    included_credits: 20000
+    overage_rate_usd_per_credit: 0.013
+    rate_limit_per_minute: 150
+- ladder: saas
+  pricing_url: https://www.toksta.com/#pricing
+  in_app_url: https://hub.toksta.com/pricing
+  scope: >-
+    Full product. API and MCP access are entitlements on the paid tiers
+    (api_access_enabled / workspace_endpoints_enabled); rate limit comes from the
+    entitlement, defaulting to 60 req/min.
+  plans:
+  - name: Free
+    price: 0
+    billing_period: month
+    included_credits: 30
+    api_access: false
+    mcp_access: false
+    limits:
+      creator_lists: 3
+      creators_per_list: 10
+      export_limit_creators: 10
+      ai_searches_per_month: 3
+    support: Email
+  - name: PAYG
+    price: 0
+    billing_period: month
+    included_credits: 0
+    credit_price_usd: 0.10
+    minimum_topup_usd: 10
+    api_access: true
+    mcp_access: true
+    mcp_note: MCP data access and MCP workspace access both included; requires positive usable credits.
+    limits:
+      note: Unlimited usage subject to credit balance. No monthly platform fee.
+    support: Email
+  - name: Starter
+    price: 99
+    price_annual: 950
+    billing_period: month
+    included_credits: 2000
+    api_access: true
+    mcp_access: true
+    limits:
+      audience_matches_per_month: 50
+      content_matches_per_month: 50
+      creator_lists: unlimited
+      csv_export: unlimited
+      ai_searches: unlimited
+      listening_rules: unlimited
+    support: Email
+  - name: Pro
+    price: 249
+    price_annual: 2390
+    billing_period: month
+    included_credits: 8000
+    api_access: true
+    mcp_access: true
+    limits:
+      audience_matches_per_month: unlimited
+      content_matches_per_month: unlimited
+      creator_lists: unlimited
+      csv_export: unlimited
+      ai_searches: unlimited
+      listening_rules: unlimited
+    support: Priority email
+  - name: Agency
+    price: 499
+    price_annual: 4790
+    billing_period: month
+    included_credits: 25000
+    api_access: true
+    mcp_access: true
+    limits:
+      audience_matches_per_month: unlimited
+      content_matches_per_month: unlimited
+      creator_lists: unlimited
+      csv_export: unlimited
+      ai_searches: unlimited
+      listening_rules: unlimited
+    support: Dedicated support manager
+  annual_discount: About 20% versus monthly.
+operation_credit_costs:
+- operation: Creator search
+  credits: 1
+  routes: [POST /v1/creators/search]
+- operation: Discovery search
+  credits: 1
+  unit: per 100 profiles
+  routes: [POST /v1/creators/discovery-search]
+- operation: Thought leaders
+  credits: 'broad: 1, balanced: 2, strict: 3'
+  unit: per creator analyzed
+  routes: [POST /v1/creators/thought-leaders]
+  note: Async — credits reserved from max_candidates_to_analyze and settled after completion; unused credits refunded.
+- operation: Profile enrichment
+  credits: 1
+  unit: per profile
+  routes: [POST /v1/creators/enrich]
+- operation: Content match
+  credits: '3 / 5 / 8 (quick / standard / deep)'
+  unit: per creator
+  routes: [POST /v1/creators/content-match]
+- operation: Audience match
+  credits: '10 / 20 / 30 (quick / deep / comprehensive)'
+  unit: per creator
+  routes: [POST /v1/creators/audience-match]
+- operation: Email finding
+  credits: 8
+  unit: per lookup
+  routes: [enrichment workflows]
+  note: >-
+    The API pricing table says 8 credits; the marketing-site credit table says 2 credits
+    per lookup. Recorded as published on both surfaces — the provider's two pages disagree.
+- operation: YouTube video analysis
+  credits: 2
+  unit: per video
+  routes: [video analysis jobs]
+- operation: YouTube video tracking
+  credits: 1
+  unit: per check
+  routes: [monitoring]
+  source: https://www.toksta.com/#pricing
+- operation: Listening rules
+  credits: 1
+  unit: per 2 posts
+  routes: [brand monitoring]
+  source: https://www.toksta.com/#pricing
+- operation: Read-only / job status / usage
+  credits: 0
+  routes: [GET routes, result fetchers, 'GET /v1/account/usage']
+free_trial:
+  available: true
+  note: Free plan with 30 credits per month; no API or MCP access on Free.
+enterprise_contact: 'Plan changes when checkout is unavailable: support email published on the pricing docs page.'
+billing_portal: 'Account -> Subscription -> Billing portal in hub.toksta.com'

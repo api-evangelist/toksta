@@ -1,0 +1,36 @@
+generated: '2026-08-13'
+method: generated
+source: >-
+  Packaged Agent Skills generated from Toksta's OpenAPI 3.0.3
+  (openapi/toksta-public-api-openapi.yml, harvested verbatim from
+  https://api.toksta.com/docs/json). Every operationId cited in every step was verified
+  against the spec; no operation is invented. Cross-cutting rules cite
+  ../conventions/, ../errors/, ../scopes/, ../plans/ and ../data-model/.
+provider_published_skills: none
+provider_published_skills_note: >-
+  No AGENTS.md, skills/ directory or provider-authored agent instructions were found on
+  toksta.com, help.toksta.com or the API host. These skills are ours.
+skills:
+- file: toksta-discover-and-shortlist-creators.md
+  name: Discover and shortlist B2B creators
+  api: openapi/toksta-public-api-openapi.yml
+  operations: [searchCreators, getSearchResultPosts, getCreator, createCreatorList, saveCreatorsToList]
+- file: toksta-enrich-creators.md
+  name: Enrich creators and read the bill
+  api: openapi/toksta-public-api-openapi.yml
+  operations: [startCreatorEnrichment, getEnrichmentResults, getAccountUsage]
+- file: toksta-score-creator-fit-for-a-campaign.md
+  name: Score creator fit for a campaign
+  api: openapi/toksta-public-api-openapi.yml
+  operations: [createCampaign, getCampaign, listCampaigns, startContentMatch, getContentMatchResults, getContentMatchPosts, startAudienceMatch, getAudienceMatchResults, getAudienceMatchDetails]
+- file: toksta-run-a-thought-leader-discovery-job.md
+  name: Run a thought-leader discovery job
+  api: openapi/toksta-public-api-openapi.yml
+  operations: [findThoughtLeaders, discoverySearchCreators, getJobStatus, getJobResults, getBulkJobResults, cancelJob]
+coverage:
+  named_operations_in_spec: 24
+  operations_covered: 23
+  uncovered: [listCreatorLists]
+  uncovered_note: >-
+    listCreatorLists is a one-call read referenced inline in the shortlist skill rather
+    than given its own flow.

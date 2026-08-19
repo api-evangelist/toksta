@@ -1,0 +1,118 @@
+# Toksta
+
+> Toksta is a B2B influencer marketing intelligence platform. It runs a vetted database of
+> active LinkedIn and YouTube B2B creators and uses AI agents to search, enrich, and score
+> them for fit against a brand's campaign — content fit, audience fit, and post-level
+> evidence — then manages campaigns, creator lists, brand monitoring and reporting on top.
+> Two machine surfaces are published: a credit-metered REST API (Public API v1) and a
+> hosted, OAuth-protected MCP server.
+
+generated: 2026-08-13
+method: generated
+source: apis.yml + repo artifacts (no /llms.txt is published by Toksta; probed 404 on www.toksta.com)
+
+## Surfaces
+
+- [Public API v1](https://api.toksta.com/v1): Bearer-authenticated REST API. Creator search
+  and discovery, enrichment, content-match and audience-match analysis jobs, post evidence,
+  campaigns, creator lists, and account usage metering.
+- [OpenAPI 3.0.3](https://api.toksta.com/docs/json): the machine-readable contract, served
+  anonymously. 28 operations, 24 with operationIds.
+- [Swagger UI](https://api.toksta.com/docs): interactive reference.
+- [MCP server](https://mcp.toksta.com/mcp): hosted remote Model Context Protocol server,
+  18 tools, OAuth 2.0. Supported in Claude and ChatGPT custom connectors.
+- [Endpoint metadata](https://api.toksta.com/v1/): anonymous JSON inventory of every route
+  with method, path, operation_id, endpoint_family and cost_key.
+
+## Documentation
+
+- [Getting Started](https://help.toksta.com/public-api/getting-started): base URL, first call,
+  polling model, job-ID formats, rate limits, error handling.
+- [Authentication](https://help.toksta.com/public-api/authentication): API key creation,
+  rotation, revocation, scope restriction.
+- [Pricing and Plans](https://help.toksta.com/public-api/pricing-and-plans): dedicated API
+  plans, SaaS plans with API access, per-operation credit costs.
+- [MCP Server](https://help.toksta.com/mcp/mcp-server): tool reference, plan eligibility,
+  per-tool credit costs.
+- [Managing API Keys](https://help.toksta.com/account/managing-api-keys)
+- [Managing MCP Access](https://help.toksta.com/account/managing-mcp-access)
+- [Help Center](https://help.toksta.com)
+
+## Authentication
+
+REST: `Authorization: Bearer tk_live_<secret>` on every request, plus
+`Content-Type: application/json`. Keys are `tk_live_` + 48 hex characters, shown once at
+creation (Toksta stores only a SHA-256 hash). Server-to-server only. Keys may be restricted
+to a subset of endpoint families; a scoped key hitting a disallowed route returns 403.
+
+MCP: OAuth 2.0 authorization_code + refresh_token against a Supabase Auth authorization
+server, discovered through `/.well-known/oauth-protected-resource` on mcp.toksta.com.
+
+## Operations
+
+Creators: `searchCreators`, `discoverySearchCreators`, `findThoughtLeaders`, `getCreator`
+Enrichment: `startCreatorEnrichment`, `getEnrichmentResults`
+Analysis: `startContentMatch`, `getContentMatchResults`, `getContentMatchPosts`,
+  `startAudienceMatch`, `getAudienceMatchResults`, `getAudienceMatchDetails`
+Evidence: `getSearchResultPosts`
+Jobs: `getJobStatus`, `getJobResults`, `getBulkJobResults`, `cancelJob`
+Campaigns: `listCampaigns`, `createCampaign`, `getCampaign`
+Creator lists: `listCreatorLists`, `createCreatorList`, `saveCreatorsToList`
+Account: `getAccountUsage`
+System (no auth): `GET /health`, `GET /ready`, `GET /version`, `GET /v1/`
+
+## MCP tools
+
+Campaigns: `get_campaigns`, `get_campaign_details`, `create_campaign`
+Discovery: `search_creators`, `get_search_result_posts`, `get_creator_details`
+Lists: `get_creator_lists`, `save_creators_to_list`
+Enrichment: `enrich_creators`, `get_enrichment_results`
+Analysis: `analyze_content_fit`, `get_content_fit_posts`, `analyze_audience_fit`,
+  `get_audience_fit_details`
+Jobs: `get_job_status`, `get_job_results`, `get_bulk_job_results`, `cancel_job`
+
+## Conventions an agent must know
+
+- Envelope: success is `{"success":true,"data":...,"meta":{...}}`; errors are
+  `{"success":false,"error":{"code","message","details"},"meta":{"request_id","trace_id"}}`.
+  Not RFC 9457.
+- Async is POLLING ONLY. Webhooks are not available in v1.
+- Job IDs are not uniform. `GET /v1/jobs/{id}` accepts PLAIN UUIDs only; content-fit,
+  audience-fit and enrichment work is retrieved through its own family results endpoint
+  (`content-fit:<uuid>`, `audience-fit:<uuid>`, or the original `creator_ids`). Using the
+  wrong endpoint returns 404.
+- `POST /v1/jobs/{id}/cancel` requires a JSON body — send `{}`.
+- `wait_seconds` (max 30) on results endpoints does a short inline server-side poll.
+- Terminal job states: succeeded, failed, canceled, expired. Results expire (30-day
+  retention in the published example) and then return 404.
+- Pagination is cursor-based: `cursor` + `limit` (1-100, default 50); `meta.next_cursor`.
+- Rate limiting: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and
+  `Retry-After` on 429. 20-150 req/min depending on plan.
+- Metering: every call may cost credits. `X-Toksta-Credit-Cost` may be returned on billable
+  responses; `GET /v1/account/usage` reports balance and consumption. 402
+  `INSUFFICIENT_CREDITS` when the balance is short.
+- No idempotency key. Do not blindly retry a start-POST — it can charge twice.
+- 501 `NOT_IMPLEMENTED` is declared on every operation: a route can be documented before
+  its handler is live.
+- Workspace routes (`/v1/campaigns`, `/v1/creator-lists`) require a SaaS workspace
+  entitlement; dedicated API plans get 403.
+
+## Repository artifacts
+
+- openapi/toksta-public-api-openapi.yml
+- mcp/toksta-mcp.yml, mcp/toksta-tool-crosswalk.yml
+- authentication/toksta-authentication.yml, scopes/toksta-scopes.yml
+- conventions/toksta-conventions.yml, errors/toksta-problem-types.yml
+- rate-limits/toksta-rate-limits.yml, plans/toksta-plans-pricing.yml
+- lifecycle/toksta-lifecycle.yml, conformance/toksta-conformance.yml
+- data-model/toksta-data-model.yml, well-known/toksta-well-known.yml
+- skills/ (packaged agent skills grounded in real operationIds)
+
+## Company
+
+- [Website](https://www.toksta.com)
+- [Blog](https://www.toksta.com/blog)
+- [App](https://hub.toksta.com)
+- [Sign up](https://hub.toksta.com/signup)
+- [Pricing](https://www.toksta.com/#pricing)
+- Backed by Seedcamp.

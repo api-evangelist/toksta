@@ -1,0 +1,54 @@
+generated: '2026-08-13'
+method: searched
+source: >-
+  Registry and repository searches — registry.npmjs.org (name lookups + full-text
+  search), pypi.org, github.com/samtoksta, and the published API + MCP documentation
+  at help.toksta.com.
+package_count: 0
+official_sdk_count: 0
+summary: >-
+  Toksta publishes NO client libraries. There is no first-party SDK, no CLI, and no
+  MCP stdio package on any registry, and the docs never reference one — every example
+  in the Getting Started, Authentication and Pricing pages is raw curl. Integration is
+  HTTP-direct against https://api.toksta.com/v1, or OAuth-connected via the hosted MCP
+  server. This is an honest zero, verified below, not an unchecked gap.
+packages: []
+searched:
+- registry: npm
+  method: name lookup
+  queries: [toksta, toksta-mcp, '@toksta/sdk', '@toksta/mcp', '@toksta/api']
+  result: 404 on every name
+- registry: npm
+  method: full-text search
+  query: 'https://registry.npmjs.org/-/v1/search?text=toksta'
+  result: '{"objects":[],"total":0} — zero packages match'
+- registry: pypi
+  method: name lookup
+  query: https://pypi.org/pypi/toksta/json
+  result: 404
+- registry: github
+  method: account listing
+  query: https://github.com/samtoksta?tab=repositories
+  result: >-
+    Only one unrelated public repo. The docs' "Edit this page" links point at
+    github.com/samtoksta/toksta-base44-migration, which is not publicly listed
+    (private or not visible anonymously) — so the docs source repo is not a package.
+- registry: docs
+  method: read
+  query: https://help.toksta.com/public-api/getting-started
+  result: 'No SDK, library, client or install instruction. curl examples only.'
+not_searched:
+  registries: [maven-central, nuget, rubygems, packagist, crates.io, pkg.go.dev]
+  reason: >-
+    No signal anywhere on the provider's surface points at a package in any language.
+    Recorded as not searched rather than implied absent.
+distribution_alternatives:
+- kind: mcp-remote
+  url: https://mcp.toksta.com/mcp
+  note: >-
+    The hosted MCP server is the closest thing Toksta ships to a client. It is a remote
+    URL, NOT an installable package — nothing is downloaded or run locally.
+  see: mcp/toksta-mcp.yml
+- kind: openapi
+  url: https://api.toksta.com/docs/json
+  note: A consumer can generate a client from the published OpenAPI 3.0.3 document.
