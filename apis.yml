@@ -64,22 +64,39 @@ tags_raw:
 - MCP
 - Brand Monitoring
 apis:
-- name: Toksta Public API
+- name: Toksta MCP Server
   description: >-
-    Credit-metered REST API for Toksta creator data, analysis jobs and SaaS workspace
-    workflows. HTTP Bearer auth with self-serve tk_live_ keys, cursor pagination, a
-    normalized success/error envelope, per-plan rate limiting, and polling-only async
-    jobs across four analysis families. 28 operations, 24 with operationIds.
+    Hosted remote Model Context Protocol server exposing 18 Toksta tools — campaigns, creator discovery,
+    lists, enrichment, content-fit and audience-fit analysis, and job control — to Claude and ChatGPT
+    custom connectors. OAuth 2.0 protected resource with RFC 8414 and RFC 9728 discovery metadata. Billed
+    against the same credit balance as the REST API; blocked on the Free plan.
+  humanURL: https://help.toksta.com/mcp/mcp-server
+  baseURL: https://mcp.toksta.com
+  tags:
+  - MCP
+  - AI Agents
+  - Creator Discovery
+  properties:
+  - type: MCPServer
+    url: mcp/toksta-mcp.yml
+  - type: MCPServer
+    url: https://mcp.toksta.com/mcp
+  - type: ToolCrosswalk
+    url: mcp/toksta-tool-crosswalk.yml
+  - type: Documentation
+    url: https://help.toksta.com/mcp/mcp-server
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
+- aid: toksta:toksta-account-api
+  name: toksta Account API
+  description: The Account API from toksta — 1 operation(s) for account.
   humanURL: https://help.toksta.com/public-api/toksta-public-api
   baseURL: https://api.toksta.com
   tags:
-  - Creator Discovery
-  - Influencer Marketing
-  - B2B
-  - Enrichment
+  - Account
   properties:
   - type: OpenAPI
-    url: openapi/toksta-public-api-openapi.yml
+    url: openapi/toksta-account-api-openapi.yml
   - type: Documentation
     url: https://help.toksta.com/public-api/getting-started
   - type: APIReference
@@ -106,38 +123,302 @@ apis:
     url: lifecycle/toksta-lifecycle.yml
   - type: Conformance
     url: conformance/toksta-conformance.yml
-  - type: Overlay
-    url: overlays/toksta-public-api-overlay.yaml
-- name: Toksta MCP Server
-  description: >-
-    Hosted remote Model Context Protocol server exposing 18 Toksta tools — campaigns,
-    creator discovery, lists, enrichment, content-fit and audience-fit analysis, and job
-    control — to Claude and ChatGPT custom connectors. OAuth 2.0 protected resource with
-    RFC 8414 and RFC 9728 discovery metadata. Billed against the same credit balance as
-    the REST API; blocked on the Free plan.
-  humanURL: https://help.toksta.com/mcp/mcp-server
-  baseURL: https://mcp.toksta.com
+- aid: toksta:toksta-analysis-api
+  name: toksta Analysis API
+  description: The Analysis API from toksta — 6 operation(s) for analysis.
+  humanURL: https://help.toksta.com/public-api/toksta-public-api
+  baseURL: https://api.toksta.com
   tags:
-  - MCP
-  - AI Agents
-  - Creator Discovery
+  - Analysis
   properties:
-  - type: MCPServer
-    url: mcp/toksta-mcp.yml
-  - type: MCPServer
-    url: https://mcp.toksta.com/mcp
-  - type: ToolCrosswalk
-    url: mcp/toksta-tool-crosswalk.yml
+  - type: OpenAPI
+    url: openapi/toksta-analysis-api-openapi.yml
   - type: Documentation
-    url: https://help.toksta.com/mcp/mcp-server
+    url: https://help.toksta.com/public-api/getting-started
+  - type: APIReference
+    url: https://help.toksta.com/public-api/toksta-public-api
+  - type: GettingStarted
+    url: https://help.toksta.com/public-api/getting-started
+  - type: SwaggerUI
+    url: https://api.toksta.com/docs
   - type: Authentication
     url: authentication/toksta-authentication.yml
+  - type: OAuthScopes
+    url: scopes/toksta-scopes.yml
+  - type: Conventions
+    url: conventions/toksta-conventions.yml
+  - type: ErrorCatalog
+    url: errors/toksta-problem-types.yml
+  - type: DataModel
+    url: data-model/toksta-data-model.yml
+  - type: RateLimits
+    url: rate-limits/toksta-rate-limits.yml
+  - type: Plans
+    url: plans/toksta-plans-pricing.yml
+  - type: Lifecycle
+    url: lifecycle/toksta-lifecycle.yml
+  - type: Conformance
+    url: conformance/toksta-conformance.yml
+- aid: toksta:toksta-campaigns-api
+  name: toksta Campaigns API
+  description: The Campaigns API from toksta — 2 operation(s) for campaigns.
+  humanURL: https://help.toksta.com/public-api/toksta-public-api
+  baseURL: https://api.toksta.com
+  tags:
+  - Campaigns
+  properties:
+  - type: OpenAPI
+    url: openapi/toksta-campaigns-api-openapi.yml
+  - type: Documentation
+    url: https://help.toksta.com/public-api/getting-started
+  - type: APIReference
+    url: https://help.toksta.com/public-api/toksta-public-api
+  - type: GettingStarted
+    url: https://help.toksta.com/public-api/getting-started
+  - type: SwaggerUI
+    url: https://api.toksta.com/docs
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
+  - type: OAuthScopes
+    url: scopes/toksta-scopes.yml
+  - type: Conventions
+    url: conventions/toksta-conventions.yml
+  - type: ErrorCatalog
+    url: errors/toksta-problem-types.yml
+  - type: DataModel
+    url: data-model/toksta-data-model.yml
+  - type: RateLimits
+    url: rate-limits/toksta-rate-limits.yml
+  - type: Plans
+    url: plans/toksta-plans-pricing.yml
+  - type: Lifecycle
+    url: lifecycle/toksta-lifecycle.yml
+  - type: Conformance
+    url: conformance/toksta-conformance.yml
+- aid: toksta:toksta-creator-lists-api
+  name: toksta Creator Lists API
+  description: The Creator Lists API from toksta — 2 operation(s) for creator lists.
+  humanURL: https://help.toksta.com/public-api/toksta-public-api
+  baseURL: https://api.toksta.com
+  tags:
+  - Creator Lists
+  properties:
+  - type: OpenAPI
+    url: openapi/toksta-creator-lists-api-openapi.yml
+  - type: Documentation
+    url: https://help.toksta.com/public-api/getting-started
+  - type: APIReference
+    url: https://help.toksta.com/public-api/toksta-public-api
+  - type: GettingStarted
+    url: https://help.toksta.com/public-api/getting-started
+  - type: SwaggerUI
+    url: https://api.toksta.com/docs
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
+  - type: OAuthScopes
+    url: scopes/toksta-scopes.yml
+  - type: Conventions
+    url: conventions/toksta-conventions.yml
+  - type: ErrorCatalog
+    url: errors/toksta-problem-types.yml
+  - type: DataModel
+    url: data-model/toksta-data-model.yml
+  - type: RateLimits
+    url: rate-limits/toksta-rate-limits.yml
+  - type: Plans
+    url: plans/toksta-plans-pricing.yml
+  - type: Lifecycle
+    url: lifecycle/toksta-lifecycle.yml
+  - type: Conformance
+    url: conformance/toksta-conformance.yml
+- aid: toksta:toksta-creators-api
+  name: toksta Creators API
+  description: The Creators API from toksta — 4 operation(s) for creators.
+  humanURL: https://help.toksta.com/public-api/toksta-public-api
+  baseURL: https://api.toksta.com
+  tags:
+  - Creators
+  properties:
+  - type: OpenAPI
+    url: openapi/toksta-creators-api-openapi.yml
+  - type: Documentation
+    url: https://help.toksta.com/public-api/getting-started
+  - type: APIReference
+    url: https://help.toksta.com/public-api/toksta-public-api
+  - type: GettingStarted
+    url: https://help.toksta.com/public-api/getting-started
+  - type: SwaggerUI
+    url: https://api.toksta.com/docs
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
+  - type: OAuthScopes
+    url: scopes/toksta-scopes.yml
+  - type: Conventions
+    url: conventions/toksta-conventions.yml
+  - type: ErrorCatalog
+    url: errors/toksta-problem-types.yml
+  - type: DataModel
+    url: data-model/toksta-data-model.yml
+  - type: RateLimits
+    url: rate-limits/toksta-rate-limits.yml
+  - type: Plans
+    url: plans/toksta-plans-pricing.yml
+  - type: Lifecycle
+    url: lifecycle/toksta-lifecycle.yml
+  - type: Conformance
+    url: conformance/toksta-conformance.yml
+- aid: toksta:toksta-enrichment-api
+  name: toksta Enrichment API
+  description: The Enrichment API from toksta — 2 operation(s) for enrichment.
+  humanURL: https://help.toksta.com/public-api/toksta-public-api
+  baseURL: https://api.toksta.com
+  tags:
+  - Enrichment
+  properties:
+  - type: OpenAPI
+    url: openapi/toksta-enrichment-api-openapi.yml
+  - type: Documentation
+    url: https://help.toksta.com/public-api/getting-started
+  - type: APIReference
+    url: https://help.toksta.com/public-api/toksta-public-api
+  - type: GettingStarted
+    url: https://help.toksta.com/public-api/getting-started
+  - type: SwaggerUI
+    url: https://api.toksta.com/docs
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
+  - type: OAuthScopes
+    url: scopes/toksta-scopes.yml
+  - type: Conventions
+    url: conventions/toksta-conventions.yml
+  - type: ErrorCatalog
+    url: errors/toksta-problem-types.yml
+  - type: DataModel
+    url: data-model/toksta-data-model.yml
+  - type: RateLimits
+    url: rate-limits/toksta-rate-limits.yml
+  - type: Plans
+    url: plans/toksta-plans-pricing.yml
+  - type: Lifecycle
+    url: lifecycle/toksta-lifecycle.yml
+  - type: Conformance
+    url: conformance/toksta-conformance.yml
+- aid: toksta:toksta-evidence-api
+  name: toksta Evidence API
+  description: The Evidence API from toksta — 1 operation(s) for evidence.
+  humanURL: https://help.toksta.com/public-api/toksta-public-api
+  baseURL: https://api.toksta.com
+  tags:
+  - Evidence
+  properties:
+  - type: OpenAPI
+    url: openapi/toksta-evidence-api-openapi.yml
+  - type: Documentation
+    url: https://help.toksta.com/public-api/getting-started
+  - type: APIReference
+    url: https://help.toksta.com/public-api/toksta-public-api
+  - type: GettingStarted
+    url: https://help.toksta.com/public-api/getting-started
+  - type: SwaggerUI
+    url: https://api.toksta.com/docs
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
+  - type: OAuthScopes
+    url: scopes/toksta-scopes.yml
+  - type: Conventions
+    url: conventions/toksta-conventions.yml
+  - type: ErrorCatalog
+    url: errors/toksta-problem-types.yml
+  - type: DataModel
+    url: data-model/toksta-data-model.yml
+  - type: RateLimits
+    url: rate-limits/toksta-rate-limits.yml
+  - type: Plans
+    url: plans/toksta-plans-pricing.yml
+  - type: Lifecycle
+    url: lifecycle/toksta-lifecycle.yml
+  - type: Conformance
+    url: conformance/toksta-conformance.yml
+- aid: toksta:toksta-jobs-api
+  name: toksta Jobs API
+  description: The Jobs API from toksta — 4 operation(s) for jobs.
+  humanURL: https://help.toksta.com/public-api/toksta-public-api
+  baseURL: https://api.toksta.com
+  tags:
+  - Jobs
+  properties:
+  - type: OpenAPI
+    url: openapi/toksta-jobs-api-openapi.yml
+  - type: Documentation
+    url: https://help.toksta.com/public-api/getting-started
+  - type: APIReference
+    url: https://help.toksta.com/public-api/toksta-public-api
+  - type: GettingStarted
+    url: https://help.toksta.com/public-api/getting-started
+  - type: SwaggerUI
+    url: https://api.toksta.com/docs
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
+  - type: OAuthScopes
+    url: scopes/toksta-scopes.yml
+  - type: Conventions
+    url: conventions/toksta-conventions.yml
+  - type: ErrorCatalog
+    url: errors/toksta-problem-types.yml
+  - type: DataModel
+    url: data-model/toksta-data-model.yml
+  - type: RateLimits
+    url: rate-limits/toksta-rate-limits.yml
+  - type: Plans
+    url: plans/toksta-plans-pricing.yml
+  - type: Lifecycle
+    url: lifecycle/toksta-lifecycle.yml
+  - type: Conformance
+    url: conformance/toksta-conformance.yml
+- aid: toksta:toksta-system-api
+  name: toksta System API
+  description: The System API from toksta — 4 operation(s) for system.
+  humanURL: https://help.toksta.com/public-api/toksta-public-api
+  baseURL: https://api.toksta.com
+  tags:
+  - System
+  properties:
+  - type: OpenAPI
+    url: openapi/toksta-system-api-openapi.yml
+  - type: Documentation
+    url: https://help.toksta.com/public-api/getting-started
+  - type: APIReference
+    url: https://help.toksta.com/public-api/toksta-public-api
+  - type: GettingStarted
+    url: https://help.toksta.com/public-api/getting-started
+  - type: SwaggerUI
+    url: https://api.toksta.com/docs
+  - type: Authentication
+    url: authentication/toksta-authentication.yml
+  - type: OAuthScopes
+    url: scopes/toksta-scopes.yml
+  - type: Conventions
+    url: conventions/toksta-conventions.yml
+  - type: ErrorCatalog
+    url: errors/toksta-problem-types.yml
+  - type: DataModel
+    url: data-model/toksta-data-model.yml
+  - type: RateLimits
+    url: rate-limits/toksta-rate-limits.yml
+  - type: Plans
+    url: plans/toksta-plans-pricing.yml
+  - type: Lifecycle
+    url: lifecycle/toksta-lifecycle.yml
+  - type: Conformance
+    url: conformance/toksta-conformance.yml
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: Overlay
+  url: overlays/toksta-public-api-overlay.yaml
 - type: Website
   url: https://www.toksta.com
 - type: Blog
