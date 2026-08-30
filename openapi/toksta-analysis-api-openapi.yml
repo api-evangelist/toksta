@@ -1,0 +1,2661 @@
+openapi: 3.2.0
+info:
+  title: Toksta Public Analysis API
+  description: Public API for Toksta creator data, analysis jobs, and SaaS workspace workflows.
+  version: 0.1.0
+servers:
+- url: https://api.toksta.com
+tags:
+- name: Analysis
+paths:
+  /v1/creators/content-match:
+    post:
+      operationId: startContentMatch
+      summary: Start content match analysis
+      tags:
+      - Analysis
+      description: 'Start LinkedIn content-fit analysis for a creator selection. Requires a user-scoped key.
+
+
+        **Selection (provide exactly one):** `creator_ids`, `result_set_id`, or `result_set_ids`.
+
+
+        **Topic criteria:** for ad hoc runs (no `campaign_id`) you MUST provide `topic_keywords` (array of strings). The field is `topic_keywords`, NOT `topics`. When `campaign_id` is supplied, criteria are read from the campaign instead.
+
+
+        Returns `202` with **prefixed** job IDs in the form `content-fit:<uuid>` under `data.job_ids` and `data.jobs[].job_id`. `jobs_created` is 0 for creators already analyzed. Use those IDs with `POST /v1/content-match/results`. Cost: 3/5/8 credits per analysis based on `posts_to_analyze` (10/20/30).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                creator_ids:
+                  type: array
+                  items:
+                    type: string
+                    description: UUID v4 string.
+                  description: Creator UUIDs to operate on. Takes precedence over result_set_id / result_set_ids when provided.
+                result_set_id:
+                  type: string
+                  description: A single `result_set_id` returned by a prior discovery search. Resolved to its ranked creators.
+                result_set_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Multiple result set IDs to merge (dedupe) into one creator selection.
+                top_n:
+                  type: integer
+                  minimum: 1
+                  description: When selecting from result set(s), take only the top N ranked creators.
+                ranks:
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 1
+                  description: When a single result_set_id is provided, select specific 1-based ranks (e.g. [1,3,5]).
+                campaign_id:
+                  type: string
+                  description: Optional campaign UUID. When set, content criteria come from the campaign.
+                campaign_brief:
+                  type: string
+                  description: Optional human-readable brief used as the analysis name.
+                topic_keywords:
+                  type: array
+                  items:
+                    type: string
+                  description: 'Topic keywords for ad hoc content match. REQUIRED when no campaign_id is provided. (Alias: `keywords`.)'
+                linkedin_content_types:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                    - image
+                    - video
+                    - carousel
+                  description: Optional content-type filter.
+                posts_to_analyze:
+                  type: integer
+                  enum:
+                  - 10
+                  - 20
+                  - 30
+                  description: Posts analyzed per creator. 10 (3cr), 20 (5cr), or 30 (8cr). Defaults to 10.
+              example:
+                creator_ids:
+                - f0e1d2c3-b4a5-4678-9abc-def012345678
+                topic_keywords:
+                - developer tools
+                - API platforms
+                - DevEx
+                posts_to_analyze: 10
+      security:
+      - bearerAuth: []
+      responses:
+        '202':
+          description: Content match jobs queued. Job IDs are prefixed `content-fit:<uuid>`.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Content match jobs queued. Job IDs are prefixed `content-fit:<uuid>`.
+                required:
+                - success
+                - data
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - true
+                  data:
+                    type: object
+                    additionalProperties: true
+                    description: Operation payload. See the example for the exact field structure.
+                  meta:
+                    type: object
+                    additionalProperties: true
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                example:
+                  success: true
+                  data:
+                    creators_requested: 2
+                    selection:
+                      source: creator_ids
+                      selected_count: 2
+                    campaign_id: null
+                    posts_to_analyze: 10
+                    jobs_created: 2
+                    job_ids:
+                    - content-fit:56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                    - content-fit:7a8b9c0d-1e2f-4a3b-8c9d-0e1f2a3b4c5d
+                    jobs:
+                    - creator_id: f0e1d2c3-b4a5-4678-9abc-def012345678
+                      analysis_id: 56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                      job_id: content-fit:56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                      status: pending
+                      cached: false
+                      message: Content analysis started. This may take a minute.
+                      creator_name: Jane Marketer
+                      profile_url: https://www.linkedin.com/in/jane-marketer/
+                    failures: []
+                  meta:
+                    request_id: req_01HXYZ...
+                    trace_id: 4f1d...c2
+        '400':
+          description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+        '401':
+          description: Missing, invalid, or revoked API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Missing, invalid, or revoked API key.
+        '402':
+          description: Insufficient credits for this operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Insufficient credits for this operation.
+        '403':
+          description: API access disabled or workspace entitlement required.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: API access disabled or workspace entitlement required.
+        '404':
+          description: Resource not found, or result expired past retention.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Resource not found, or result expired past retention.
+        '429':
+          description: Rate limit exceeded — back off per `Retry-After`.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Rate limit exceeded — back off per `Retry-After`.
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Unexpected server error.
+        '501':
+          description: Endpoint is registered but not implemented yet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Endpoint is registered but not implemented yet.
+  /v1/creators/audience-match:
+    post:
+      operationId: startAudienceMatch
+      summary: Start audience match analysis
+      tags:
+      - Analysis
+      description: 'Start LinkedIn audience-fit analysis for a creator selection. Requires a user-scoped key.
+
+
+        **Selection (provide exactly one):** `creator_ids`, `result_set_id`, or `result_set_ids`.
+
+
+        **Audience criteria:** for ad hoc runs (no `campaign_id`) provide at least one of `campaign_brief`, `target_audience`, `audience_keywords` (array), or `target_audience_criteria` (array). When `campaign_id` is set, criteria are read from the campaign.
+
+
+        Returns `202` with **prefixed** job IDs in the form `audience-fit:<uuid>`. Use those IDs with `POST /v1/audience-match/results` or `/details`. Cost: 10/20/30 credits per analysis based on `analysis_depth`.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                creator_ids:
+                  type: array
+                  items:
+                    type: string
+                    description: UUID v4 string.
+                  description: Creator UUIDs to operate on. Takes precedence over result_set_id / result_set_ids when provided.
+                result_set_id:
+                  type: string
+                  description: A single `result_set_id` returned by a prior discovery search. Resolved to its ranked creators.
+                result_set_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Multiple result set IDs to merge (dedupe) into one creator selection.
+                top_n:
+                  type: integer
+                  minimum: 1
+                  description: When selecting from result set(s), take only the top N ranked creators.
+                ranks:
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 1
+                  description: When a single result_set_id is provided, select specific 1-based ranks (e.g. [1,3,5]).
+                campaign_id:
+                  type: string
+                  description: Optional campaign UUID. When set, audience criteria come from the campaign.
+                campaign_brief:
+                  type: string
+                  description: Free-text brief describing the target audience (ad hoc).
+                target_audience:
+                  type: string
+                  description: Alias for campaign_brief (ad hoc).
+                audience_keywords:
+                  type: array
+                  items:
+                    type: string
+                  description: 'Audience keywords (ad hoc). Alias: `keywords`.'
+                target_audience_criteria:
+                  type: array
+                  items:
+                    type: string
+                  description: Free-form audience criteria strings (e.g. job titles, seniorities, industries) for ad hoc runs.
+                analysis_depth:
+                  type: string
+                  enum:
+                  - quick_scan
+                  - deep_dive
+                  - comprehensive
+                  description: Analysis depth. quick_scan (10cr), deep_dive (20cr), comprehensive (30cr). Defaults to quick_scan.
+              example:
+                creator_ids:
+                - f0e1d2c3-b4a5-4678-9abc-def012345678
+                target_audience_criteria:
+                - VP Marketing
+                - Head of Growth
+                - B2B SaaS
+                analysis_depth: quick_scan
+      security:
+      - bearerAuth: []
+      responses:
+        '202':
+          description: Audience match jobs queued. Job IDs are prefixed `audience-fit:<uuid>`.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Audience match jobs queued. Job IDs are prefixed `audience-fit:<uuid>`.
+                required:
+                - success
+                - data
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - true
+                  data:
+                    type: object
+                    additionalProperties: true
+                    description: Operation payload. See the example for the exact field structure.
+                  meta:
+                    type: object
+                    additionalProperties: true
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                example:
+                  success: true
+                  data:
+                    creators_requested: 1
+                    selection:
+                      source: creator_ids
+                      selected_count: 1
+                    campaign_id: null
+                    analysis_depth: quick_scan
+                    jobs_created: 1
+                    job_ids:
+                    - audience-fit:a5f1eeb5-ee98-41bc-8b2c-3d4e5f6a7b8c
+                    jobs:
+                    - creator_id: f0e1d2c3-b4a5-4678-9abc-def012345678
+                      analysis_id: a5f1eeb5-ee98-41bc-8b2c-3d4e5f6a7b8c
+                      job_id: audience-fit:a5f1eeb5-ee98-41bc-8b2c-3d4e5f6a7b8c
+                      status: pending
+                      cached: false
+                      message: Audience analysis started. This may take a few minutes.
+                      creator_name: Jane Marketer
+                      profile_url: https://www.linkedin.com/in/jane-marketer/
+                    failures: []
+                  meta:
+                    request_id: req_01HXYZ...
+                    trace_id: 4f1d...c2
+        '400':
+          description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+        '401':
+          description: Missing, invalid, or revoked API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Missing, invalid, or revoked API key.
+        '402':
+          description: Insufficient credits for this operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Insufficient credits for this operation.
+        '403':
+          description: API access disabled or workspace entitlement required.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: API access disabled or workspace entitlement required.
+        '404':
+          description: Resource not found, or result expired past retention.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Resource not found, or result expired past retention.
+        '429':
+          description: Rate limit exceeded — back off per `Retry-After`.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Rate limit exceeded — back off per `Retry-After`.
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Unexpected server error.
+        '501':
+          description: Endpoint is registered but not implemented yet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Endpoint is registered but not implemented yet.
+  /v1/content-match/results:
+    post:
+      operationId: getContentMatchResults
+      summary: Get content match results
+      tags:
+      - Analysis
+      description: 'Fetch content-match analysis results.
+
+
+        **Two selection modes:**
+
+        1. By job: `job_id` (string) or `job_ids` (array). Accepts the prefixed form `content-fit:<uuid>` or the bare analysis UUID.
+
+        2. By creators: `creator_ids`/`result_set_id`/`result_set_ids` (optionally with `campaign_id`) to fetch the latest saved analysis per creator.
+
+
+        `detail_level: "full"` adds the `results` array. Use `wait_seconds` to poll inline.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                job_id:
+                  type: string
+                  description: A single content-match job ID (`content-fit:<uuid>` or bare UUID).
+                job_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Multiple content-match job IDs.
+                creator_ids:
+                  type: array
+                  items:
+                    type: string
+                    description: UUID v4 string.
+                  description: Creator UUIDs to operate on. Takes precedence over result_set_id / result_set_ids when provided.
+                result_set_id:
+                  type: string
+                  description: A single `result_set_id` returned by a prior discovery search. Resolved to its ranked creators.
+                result_set_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Multiple result set IDs to merge (dedupe) into one creator selection.
+                top_n:
+                  type: integer
+                  minimum: 1
+                  description: When selecting from result set(s), take only the top N ranked creators.
+                ranks:
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 1
+                  description: When a single result_set_id is provided, select specific 1-based ranks (e.g. [1,3,5]).
+                campaign_id:
+                  type: string
+                  description: Optional campaign UUID to scope creator-based lookups.
+                detail_level:
+                  type: string
+                  enum:
+                  - summary
+                  - full
+                  description: Response verbosity. `summary` (default) returns trimmed fields; `full` returns the complete records.
+                wait_seconds:
+                  type: integer
+                  minimum: 0
+                  maximum: 30
+                  description: Optional inline poll. Holds the request up to this many seconds (max 30) waiting for jobs to reach a terminal state before returning. Defaults to 0 (return immediately).
+              example:
+                job_id: content-fit:56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                detail_level: summary
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Content-match results. Job-selector mode returns selection/found_count; creator mode returns creators_requested/missing_creator_ids.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Content-match results. Job-selector mode returns selection/found_count; creator mode returns creators_requested/missing_creator_ids.
+                required:
+                - success
+                - data
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - true
+                  data:
+                    type: object
+                    additionalProperties: true
+                    description: Operation payload. See the example for the exact field structure.
+                  meta:
+                    type: object
+                    additionalProperties: true
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                example:
+                  success: true
+                  data:
+                    selection:
+                      source: job_id
+                      selected_count: 1
+                    requested_count: 1
+                    found_count: 1
+                    not_found_ids: []
+                    expired_ids: []
+                    results_summary:
+                    - job_id: content-fit:56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                      analysis_id: 56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                      creator_id: f0e1d2c3-b4a5-4678-9abc-def012345678
+                      creator_name: Jane Marketer
+                      profile_url: https://www.linkedin.com/in/jane-marketer/
+                      platform: linkedin
+                      status: succeeded
+                      source_status: completed
+                      match_score: 78
+                      matching_posts_count: 6
+                      total_posts_analyzed: 10
+                      content_fit_label: Strong fit
+                      matched_posts_status: saved_snippets_available
+                      recommended_next_endpoint: /v1/content-match/posts
+                      error_message: null
+                      completed_at: '2026-05-28T09:06:00Z'
+                      updated_at: '2026-05-28T09:06:00Z'
+                  meta:
+                    request_id: req_01HXYZ...
+                    trace_id: 4f1d...c2
+        '400':
+          description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+        '401':
+          description: Missing, invalid, or revoked API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Missing, invalid, or revoked API key.
+        '402':
+          description: Insufficient credits for this operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Insufficient credits for this operation.
+        '403':
+          description: API access disabled or workspace entitlement required.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: API access disabled or workspace entitlement required.
+        '404':
+          description: Resource not found, or result expired past retention.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Resource not found, or result expired past retention.
+        '429':
+          description: Rate limit exceeded — back off per `Retry-After`.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Rate limit exceeded — back off per `Retry-After`.
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Unexpected server error.
+        '501':
+          description: Endpoint is registered but not implemented yet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Endpoint is registered but not implemented yet.
+  /v1/content-match/posts:
+    post:
+      operationId: getContentMatchPosts
+      summary: Get content match evidence posts
+      tags:
+      - Analysis
+      description: Fetch the matched posts (evidence) for content-match analyses. Same selection modes as `/v1/content-match/results` (`job_id`/`job_ids` accepting `content-fit:<uuid>` or bare UUID, or `creator_ids`/result sets + optional `campaign_id`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                job_id:
+                  type: string
+                  description: A single content-match job ID (`content-fit:<uuid>` or bare UUID).
+                job_ids:
+                  type: array
+                  items:
+                    type: string
+                creator_ids:
+                  type: array
+                  items:
+                    type: string
+                    description: UUID v4 string.
+                  description: Creator UUIDs to operate on. Takes precedence over result_set_id / result_set_ids when provided.
+                result_set_id:
+                  type: string
+                  description: A single `result_set_id` returned by a prior discovery search. Resolved to its ranked creators.
+                result_set_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Multiple result set IDs to merge (dedupe) into one creator selection.
+                top_n:
+                  type: integer
+                  minimum: 1
+                  description: When selecting from result set(s), take only the top N ranked creators.
+                ranks:
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 1
+                  description: When a single result_set_id is provided, select specific 1-based ranks (e.g. [1,3,5]).
+                campaign_id:
+                  type: string
+                  description: Optional campaign UUID to scope creator-based lookups.
+                posts_limit_per_creator:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  description: Matched posts per creator (1-10). Defaults to 3.
+                detail_level:
+                  type: string
+                  enum:
+                  - summary
+                  - full
+                  description: Response verbosity. `summary` (default) returns trimmed fields; `full` returns the complete records.
+                wait_seconds:
+                  type: integer
+                  minimum: 0
+                  maximum: 30
+                  description: Optional inline poll. Holds the request up to this many seconds (max 30) waiting for jobs to reach a terminal state before returning. Defaults to 0 (return immediately).
+              example:
+                job_id: content-fit:56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                detail_level: full
+                posts_limit_per_creator: 5
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Matched posts for content-match analyses.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Matched posts for content-match analyses.
+                required:
+                - success
+                - data
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - true
+                  data:
+                    type: object
+                    additionalProperties: true
+                    description: Operation payload. See the example for the exact field structure.
+                  meta:
+                    type: object
+                    additionalProperties: true
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                example:
+                  success: true
+                  data:
+                    selection:
+                      source: job_id
+                      selected_count: 1
+                    requested_count: 1
+                    found_count: 1
+                    not_found_ids: []
+                    expired_ids: []
+                    detail_level: full
+                    posts_limit_per_creator: 5
+                    results:
+                    - source: job_id content-fit:56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                      job_id: content-fit:56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                      analysis_id: 56232ac2-8068-4dcb-9d1a-1f2e3a4b5c6d
+                      creator_id: f0e1d2c3-b4a5-4678-9abc-def012345678
+                      creator_name: Jane Marketer
+                      status: succeeded
+                      match_score: 78
+                      matching_posts_count: 6
+                      returned_posts_count: 5
+                      has_more_matched_posts: true
+                      matched_posts:
+                      - title: Why DevEx wins
+                        post_url: https://www.linkedin.com/posts/jane-marketer_...
+                        posted_date: '2026-05-18'
+                        content_type: text
+                        match_score: 81
+                        keyword_matches:
+                        - developer tools
+                        match_reason: Directly discusses developer tooling adoption.
+                  meta:
+                    request_id: req_01HXYZ...
+                    trace_id: 4f1d...c2
+        '400':
+          description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+        '401':
+          description: Missing, invalid, or revoked API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Missing, invalid, or revoked API key.
+        '402':
+          description: Insufficient credits for this operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Insufficient credits for this operation.
+        '403':
+          description: API access disabled or workspace entitlement required.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: API access disabled or workspace entitlement required.
+        '404':
+          description: Resource not found, or result expired past retention.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Resource not found, or result expired past retention.
+        '429':
+          description: Rate limit exceeded — back off per `Retry-After`.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Rate limit exceeded — back off per `Retry-After`.
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Unexpected server error.
+        '501':
+          description: Endpoint is registered but not implemented yet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Endpoint is registered but not implemented yet.
+  /v1/audience-match/results:
+    post:
+      operationId: getAudienceMatchResults
+      summary: Get audience match results
+      tags:
+      - Analysis
+      description: 'Fetch audience-match analysis results. Same dual selection model as content match: `job_id`/`job_ids` (accepting `audience-fit:<uuid>` or bare UUID) OR `creator_ids`/result sets + optional `campaign_id`. `detail_level: "full"` adds the `results` array.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                job_id:
+                  type: string
+                  description: A single audience-match job ID (`audience-fit:<uuid>` or bare UUID).
+                job_ids:
+                  type: array
+                  items:
+                    type: string
+                creator_ids:
+                  type: array
+                  items:
+                    type: string
+                    description: UUID v4 string.
+                  description: Creator UUIDs to operate on. Takes precedence over result_set_id / result_set_ids when provided.
+                result_set_id:
+                  type: string
+                  description: A single `result_set_id` returned by a prior discovery search. Resolved to its ranked creators.
+                result_set_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Multiple result set IDs to merge (dedupe) into one creator selection.
+                top_n:
+                  type: integer
+                  minimum: 1
+                  description: When selecting from result set(s), take only the top N ranked creators.
+                ranks:
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 1
+                  description: When a single result_set_id is provided, select specific 1-based ranks (e.g. [1,3,5]).
+                campaign_id:
+                  type: string
+                  description: Optional campaign UUID to scope creator-based lookups.
+                detail_level:
+                  type: string
+                  enum:
+                  - summary
+                  - full
+                  description: Response verbosity. `summary` (default) returns trimmed fields; `full` returns the complete records.
+                wait_seconds:
+                  type: integer
+                  minimum: 0
+                  maximum: 30
+                  description: Optional inline poll. Holds the request up to this many seconds (max 30) waiting for jobs to reach a terminal state before returning. Defaults to 0 (return immediately).
+              example:
+                job_id: audience-fit:a5f1eeb5-ee98-41bc-8b2c-3d4e5f6a7b8c
+                detail_level: summary
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Audience-match results summary. Call /v1/audience-match/details for full breakdowns.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Audience-match results summary. Call /v1/audience-match/details for full breakdowns.
+                required:
+                - success
+                - data
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - true
+                  data:
+                    type: object
+                    additionalProperties: true
+                    description: Operation payload. See the example for the exact field structure.
+                  meta:
+                    type: object
+                    additionalProperties: true
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                example:
+                  success: true
+                  data:
+                    selection:
+                      source: job_id
+                      selected_count: 1
+                    requested_count: 1
+                    found_count: 1
+                    not_found_ids: []
+                    expired_ids: []
+                    results_summary:
+                    - job_id: audience-fit:a5f1eeb5-ee98-41bc-8b2c-3d4e5f6a7b8c
+                      analysis_id: a5f1eeb5-ee98-41bc-8b2c-3d4e5f6a7b8c
+                      creator_id: f0e1d2c3-b4a5-4678-9abc-def012345678
+                      creator_name: Jane Marketer
+                      platform: linkedin
+                      status: succeeded
+                      match_score: 71
+                      matching_engagers_count: 134
+                      total_engagers_analyzed: 300
+                      unique_companies: 88
+                      audience_summary: Audience skews senior B2B marketing and growth leaders.
+                      recommended_next_endpoint: /v1/audience-match/details
+                      completed_at: '2026-05-28T09:12:00Z'
+                      updated_at: '2026-05-28T09:12:00Z'
+                  meta:
+                    request_id: req_01HXYZ...
+                    trace_id: 4f1d...c2
+        '400':
+          description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+        '401':
+          description: Missing, invalid, or revoked API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Missing, invalid, or revoked API key.
+        '402':
+          description: Insufficient credits for this operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Insufficient credits for this operation.
+        '403':
+          description: API access disabled or workspace entitlement required.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: API access disabled or workspace entitlement required.
+        '404':
+          description: Resource not found, or result expired past retention.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Resource not found, or result expired past retention.
+        '429':
+          description: Rate limit exceeded — back off per `Retry-After`.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Rate limit exceeded — back off per `Retry-After`.
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Unexpected server error.
+        '501':
+          description: Endpoint is registered but not implemented yet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Endpoint is registered but not implemented yet.
+  /v1/audience-match/details:
+    post:
+      operationId: getAudienceMatchDetails
+      summary: Get audience match details
+      tags:
+      - Analysis
+      description: Fetch detailed audience-match breakdowns (top engagers, companies, job titles, geography). Same selection model as `/v1/audience-match/results`. `engagers_limit` controls how many engagers are returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                job_id:
+                  type: string
+                  description: A single audience-match job ID (`audience-fit:<uuid>` or bare UUID).
+                job_ids:
+                  type: array
+                  items:
+                    type: string
+                creator_ids:
+                  type: array
+                  items:
+                    type: string
+                    description: UUID v4 string.
+                  description: Creator UUIDs to operate on. Takes precedence over result_set_id / result_set_ids when provided.
+                result_set_id:
+                  type: string
+                  description: A single `result_set_id` returned by a prior discovery search. Resolved to its ranked creators.
+                result_set_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Multiple result set IDs to merge (dedupe) into one creator selection.
+                top_n:
+                  type: integer
+                  minimum: 1
+                  description: When selecting from result set(s), take only the top N ranked creators.
+                ranks:
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 1
+                  description: When a single result_set_id is provided, select specific 1-based ranks (e.g. [1,3,5]).
+                campaign_id:
+                  type: string
+                  description: Optional campaign UUID to scope creator-based lookups.
+                engagers_limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 30
+                  description: Top engagers to return (1-30). Defaults to 5.
+                detail_level:
+                  type: string
+                  enum:
+                  - summary
+                  - full
+                  description: Response verbosity. `summary` (default) returns trimmed fields; `full` returns the complete records.
+                wait_seconds:
+                  type: integer
+                  minimum: 0
+                  maximum: 30
+                  description: Optional inline poll. Holds the request up to this many seconds (max 30) waiting for jobs to reach a terminal state before returning. Defaults to 0 (return immediately).
+              example:
+                job_id: audience-fit:a5f1eeb5-ee98-41bc-8b2c-3d4e5f6a7b8c
+                detail_level: full
+                engagers_limit: 10
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Detailed audience-match breakdowns.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Detailed audience-match breakdowns.
+                required:
+                - success
+                - data
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - true
+                  data:
+                    type: object
+                    additionalProperties: true
+                    description: Operation payload. See the example for the exact field structure.
+                  meta:
+                    type: object
+                    additionalProperties: true
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                example:
+                  success: true
+                  data:
+                    selection:
+                      source: job_id
+                      selected_count: 1
+                    requested_count: 1
+                    found_count: 1
+                    not_found_ids: []
+                    expired_ids: []
+                    detail_level: full
+                    engagers_limit: 10
+                    results:
+                    - job_id: audience-fit:a5f1eeb5-ee98-41bc-8b2c-3d4e5f6a7b8c
+                      creator_id: f0e1d2c3-b4a5-4678-9abc-def012345678
+                      status: succeeded
+                      match_score: 71
+                      total_engagers_analyzed: 300
+                      matching_engagers_count: 134
+                      unique_companies: 88
+                      audience_summary: Audience skews senior B2B marketing and growth leaders.
+                      top_matching_engagers:
+                      - name: Sam B.
+                        job_title: VP Marketing
+                        company: Acme
+                        headline: VP Marketing at Acme
+                        linkedin_url: https://www.linkedin.com/in/sam-b/
+                        engagement_count: 4
+                      top_companies:
+                      - name: Acme
+                        count: 12
+                        percentage: 8.9
+                      job_title_breakdown:
+                      - title: VP Marketing
+                        count: 18
+                  meta:
+                    request_id: req_01HXYZ...
+                    trace_id: 4f1d...c2
+        '400':
+          description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Bad request or validation error (`BAD_REQUEST` / `VALIDATION_ERROR`).
+        '401':
+          description: Missing, invalid, or revoked API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Missing, invalid, or revoked API key.
+        '402':
+          description: Insufficient credits for this operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Insufficient credits for this operation.
+        '403':
+          description: API access disabled or workspace entitlement required.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: API access disabled or workspace entitlement required.
+        '404':
+          description: Resource not found, or result expired past retention.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Resource not found, or result expired past retention.
+        '429':
+          description: Rate limit exceeded — back off per `Retry-After`.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Rate limit exceeded — back off per `Retry-After`.
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Unexpected server error.
+        '501':
+          description: Endpoint is registered but not implemented yet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - error
+                - meta
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                    - false
+                  error:
+                    type: object
+                    required:
+                    - code
+                    - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details:
+                        type: object
+                        additionalProperties: true
+                  meta:
+                    type: object
+                    required:
+                    - request_id
+                    properties:
+                      request_id:
+                        type: string
+                      trace_id:
+                        type: string
+                description: Endpoint is registered but not implemented yet.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key

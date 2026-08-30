@@ -1,0 +1,57 @@
+openapi: 3.2.0
+info:
+  title: Toksta Public System API
+  description: Public API for Toksta creator data, analysis jobs, and SaaS workspace workflows.
+  version: 0.1.0
+servers:
+- url: https://api.toksta.com
+tags:
+- name: System
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags:
+      - System
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                properties:
+                  status:
+                    type: string
+  /ready:
+    get:
+      summary: Readiness check
+      tags:
+      - System
+      responses:
+        '200':
+          description: Default Response
+  /version:
+    get:
+      summary: Service version
+      tags:
+      - System
+      responses:
+        '200':
+          description: Default Response
+  /v1/:
+    get:
+      summary: List v1 endpoint metadata
+      tags:
+      - System
+      responses:
+        '200':
+          description: Default Response
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
