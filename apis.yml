@@ -357,6 +357,8 @@ apis:
   humanURL: https://help.toksta.com/public-api/toksta-public-api
   baseURL: https://api.toksta.com
   tags:
+  - Job
+  tags_raw:
   - Jobs
   properties:
   - type: OpenAPI
