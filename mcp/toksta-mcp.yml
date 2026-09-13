@@ -11,11 +11,15 @@ deployment:
   endpoint: https://mcp.toksta.com/mcp
   auth: oauth
   verified: probed
-  note: >-
-    Hosted, remote, HTTP-transport MCP server. No stdio package, no npx installer and
-    no published client library exist — npm, PyPI and the provider's GitHub presence
-    were all searched and returned nothing (see packages/toksta-packages.yml). An agent
-    reaches this server by URL after an OAuth sign-in; there is nothing to install.
+  note: Hosted, remote, HTTP-transport MCP server. No stdio package, no npx installer and no published
+    client library exist — npm, PyPI and the provider's GitHub presence were all searched and returned
+    nothing (see packages/toksta-packages.yml). An agent reaches this server by URL after an OAuth sign-in;
+    there is nothing to install.
+  probe_prior: (never probed)
+  probe: gated
+  probe_why: RFC 9728 challenge on the MCP path only
+  checked: '2026-09-11'
+  source: claimed-backlog re-probe 2026-09-11
 server:
   name: toksta-mcp
   transport: http
@@ -39,29 +43,31 @@ auth:
     authorization_endpoint: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1/oauth/authorize
     token_endpoint: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1/oauth/token
     registration_endpoint: https://zkdnqaotketigndjpfqw.supabase.co/auth/v1/oauth/clients/register
-    grant_types: [authorization_code, refresh_token]
-    pkce: [S256, plain]
+    grant_types:
+    - authorization_code
+    - refresh_token
+    pkce:
+    - S256
+    - plain
     scopes_supported: null
     discovery: well-known/toksta-mcp-oauth-authorization-server.json
 introspection:
   attempted: true
-  method: 'POST /mcp {"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+  method: POST /mcp {"jsonrpc":"2.0","id":1,"method":"tools/list"}
   http_status: 401
-  www_authenticate: 'Bearer error="invalid_token", error_description="Missing Authorization header", resource_metadata="https://mcp.toksta.com/.well-known/oauth-protected-resource/mcp"'
+  www_authenticate: Bearer error="invalid_token", error_description="Missing Authorization header", resource_metadata="https://mcp.toksta.com/.well-known/oauth-protected-resource/mcp"
   verdict: gated
   control_probe:
     url: https://mcp.toksta.com/zzz-not-a-real-path
     status: 404
-    body: 'Cannot GET /zzz-not-a-real-path (HTML)'
+    body: Cannot GET /zzz-not-a-real-path (HTML)
     discriminates: true
-    note: >-
-      The host discriminates — a path that cannot exist returns 404 HTML while /mcp
-      returns a 401 JSON OAuth challenge. The MCP surface is therefore proven to exist
-      and to be authentication-gated, not merely opaque.
-  tool_schemas: >-
-    inputSchema for each tool requires an authenticated tools/list call and is NOT
-    captured here. The tool NAMES and descriptions below are transcribed verbatim from
-    the provider's published MCP Tools Reference, not inferred.
+    note: The host discriminates — a path that cannot exist returns 404 HTML while /mcp returns a 401
+      JSON OAuth challenge. The MCP surface is therefore proven to exist and to be authentication-gated,
+      not merely opaque.
+  tool_schemas: inputSchema for each tool requires an authenticated tools/list call and is NOT captured
+    here. The tool NAMES and descriptions below are transcribed verbatim from the provider's published
+    MCP Tools Reference, not inferred.
 entitlement:
   gate: plan + credit balance, not OAuth scope
   plans:
