@@ -23,7 +23,7 @@ paths:
         **Topic criteria:** for ad hoc runs (no `campaign_id`) you MUST provide `topic_keywords` (array of strings). The field is `topic_keywords`, NOT `topics`. When `campaign_id` is supplied, criteria are read from the campaign instead.
 
 
-        Returns `202` with **prefixed** job IDs in the form `content-fit:<uuid>` under `data.job_ids` and `data.jobs[].job_id`. `jobs_created` is 0 for creators already analyzed. Use those IDs with `POST /v1/content-match/results`. Cost: 3/5/8 credits per analysis based on `posts_to_analyze` (10/20/30).'
+        Returns `202` with **prefixed** job IDs in the form `content-fit:` under `data.job_ids` and `data.jobs[].job_id`. `jobs_created` is 0 for creators already analyzed. Use those IDs with `POST /v1/content-match/results`. Cost: 3/5/8 credits per analysis based on `posts_to_analyze` (10/20/30).'
       requestBody:
         required: true
         content:
@@ -469,7 +469,7 @@ paths:
         **Audience criteria:** for ad hoc runs (no `campaign_id`) provide at least one of `campaign_brief`, `target_audience`, `audience_keywords` (array), or `target_audience_criteria` (array). When `campaign_id` is set, criteria are read from the campaign.
 
 
-        Returns `202` with **prefixed** job IDs in the form `audience-fit:<uuid>`. Use those IDs with `POST /v1/audience-match/results` or `/details`. Cost: 10/20/30 credits per analysis based on `analysis_depth`.'
+        Returns `202` with **prefixed** job IDs in the form `audience-fit:`. Use those IDs with `POST /v1/audience-match/results` or `/details`. Cost: 10/20/30 credits per analysis based on `analysis_depth`.'
       requestBody:
         required: true
         content:
@@ -909,7 +909,7 @@ paths:
 
         **Two selection modes:**
 
-        1. By job: `job_id` (string) or `job_ids` (array). Accepts the prefixed form `content-fit:<uuid>` or the bare analysis UUID.
+        1. By job: `job_id` (string) or `job_ids` (array). Accepts the prefixed form `content-fit:` or the bare analysis UUID.
 
         2. By creators: `creator_ids`/`result_set_id`/`result_set_ids` (optionally with `campaign_id`) to fetch the latest saved analysis per creator.
 
@@ -1346,7 +1346,7 @@ paths:
       summary: Get content match evidence posts
       tags:
       - Analysis
-      description: Fetch the matched posts (evidence) for content-match analyses. Same selection modes as `/v1/content-match/results` (`job_id`/`job_ids` accepting `content-fit:<uuid>` or bare UUID, or `creator_ids`/result sets + optional `campaign_id`).
+      description: Fetch the matched posts (evidence) for content-match analyses. Same selection modes as `/v1/content-match/results` (`job_id`/`job_ids` accepting `content-fit:` or bare UUID, or `creator_ids`/result sets + optional `campaign_id`).
       requestBody:
         required: true
         content:
@@ -1787,7 +1787,7 @@ paths:
       summary: Get audience match results
       tags:
       - Analysis
-      description: 'Fetch audience-match analysis results. Same dual selection model as content match: `job_id`/`job_ids` (accepting `audience-fit:<uuid>` or bare UUID) OR `creator_ids`/result sets + optional `campaign_id`. `detail_level: "full"` adds the `results` array.'
+      description: 'Fetch audience-match analysis results. Same dual selection model as content match: `job_id`/`job_ids` (accepting `audience-fit:` or bare UUID) OR `creator_ids`/result sets + optional `campaign_id`. `detail_level: "full"` adds the `results` array.'
       requestBody:
         required: true
         content:

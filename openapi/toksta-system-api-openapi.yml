@@ -25,6 +25,8 @@ paths:
                 properties:
                   status:
                     type: string
+      operationId: getHealth
+      x-operation-id-source: derived
   /ready:
     get:
       summary: Readiness check
@@ -33,6 +35,8 @@ paths:
       responses:
         '200':
           description: Default Response
+      operationId: getReady
+      x-operation-id-source: derived
   /version:
     get:
       summary: Service version
@@ -41,6 +45,8 @@ paths:
       responses:
         '200':
           description: Default Response
+      operationId: getVersion
+      x-operation-id-source: derived
   /v1/:
     get:
       summary: List v1 endpoint metadata
@@ -49,6 +55,8 @@ paths:
       responses:
         '200':
           description: Default Response
+      operationId: getV1
+      x-operation-id-source: derived
 components:
   securitySchemes:
     bearerAuth:

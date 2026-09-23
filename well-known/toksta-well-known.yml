@@ -1,12 +1,16 @@
-generated: '2026-08-13'
+generated: '2026-09-19'
 method: probed
 source: live probes of /.well-known/ across every Toksta host
-note: >-
-  Two real documents are served, both by the MCP host: RFC 8414 authorization-server
-  metadata and RFC 9728 protected-resource metadata. Everything else 404s. IMPORTANT:
-  hub.toksta.com is a single-page app whose catch-all answers HTTP 200 with the same
-  HTML shell for EVERY path, including every /.well-known/* path probed. Those 200s
-  are NOT documents and are recorded here as misses.
+note: 'Two real documents are served, both by the MCP host: RFC 8414 authorization-server metadata and
+  RFC 9728 protected-resource metadata. Everything else 404s. IMPORTANT: hub.toksta.com is a single-page
+  app whose catch-all answers HTTP 200 with the same HTML shell for EVERY path, including every /.well-known/*
+  path probed. Those 200s are NOT documents and are recorded here as misses.
+
+
+  MCP-host OAuth discovery added 2026-09-19 (roadmap#321/#337): the harvest visits a provider''s primary
+  hosts, and RFC 9728 protected-resource metadata lives on the MCP host, so these documents existed and
+  were invisible to the scorer. Fetched live and validated on `resource`/`issuer`; one negative control
+  per host.'
 hosts:
 - host: https://mcp.toksta.com
   documents:
@@ -103,6 +107,13 @@ hosts:
     status: 200
     verdict: miss
     note: SPA shell HTML, not a document.
+- host: https://zkdnqaotketigndjpfqw.supabase.co
+  documents:
+  - path: /auth/v1/.well-known/oauth-authorization-server
+    status: 200
+    file: toksta-zkdnqaotketigndjpfqw-oauth-authorization-server.json
+    bytes: 1143
+  path_echo_control: passed
 summary:
   real_documents: 2
   security_txt: false
@@ -112,3 +123,12 @@ summary:
   api_catalog: false
   ai_plugin: false
   agent_card: false
+x-mcp-probe:
+  probed: '2026-09-19'
+  issue: roadmap#321, roadmap#337
+  documents:
+  - host: https://zkdnqaotketigndjpfqw.supabase.co
+    path: /auth/v1/.well-known/oauth-authorization-server
+    file: toksta-zkdnqaotketigndjpfqw-oauth-authorization-server.json
+  validated_on: resource (RFC 9728) / issuer (RFC 8414, OIDC)
+  negative_control: one per host; a 2xx JSON object at an impossible path discards the host

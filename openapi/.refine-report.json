@@ -1,0 +1,47 @@
+{
+  "provider": "toksta",
+  "sources": [
+    "_original/toksta-public-api-openapi.json"
+  ],
+  "outputs": [
+    "toksta-account-api-openapi.yml",
+    "toksta-analysis-api-openapi.yml",
+    "toksta-campaigns-api-openapi.yml",
+    "toksta-creator-lists-api-openapi.yml",
+    "toksta-creators-api-openapi.yml",
+    "toksta-enrichment-api-openapi.yml",
+    "toksta-evidence-api-openapi.yml",
+    "toksta-jobs-api-openapi.yml",
+    "toksta-system-api-openapi.yml"
+  ],
+  "archived": [],
+  "errors": [],
+  "warnings": [],
+  "notes": [
+    "1 archived document(s) dropped as subsets of other archived documents",
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
+    "toksta-public-api-openapi.json: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
+    "toksta-public-api-openapi.json: declared missing tag: Account",
+    "toksta-public-api-openapi.json: declared missing tag: Analysis",
+    "toksta-public-api-openapi.json: declared missing tag: Campaigns",
+    "toksta-public-api-openapi.json: declared missing tag: Creator Lists",
+    "toksta-public-api-openapi.json: declared missing tag: Creators",
+    "toksta-public-api-openapi.json: declared missing tag: Enrichment",
+    "toksta-public-api-openapi.json: declared missing tag: Evidence",
+    "toksta-public-api-openapi.json: declared missing tag: Jobs",
+    "toksta-public-api-openapi.json: declared missing tag: System",
+    "apis.yml register: already-registered"
+  ],
+  "skipped": [
+    "_original/toksta-public-api-openapi.yml: archived document superseded by a larger archived document",
+    "toksta-account-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "toksta-analysis-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "toksta-campaigns-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "toksta-creator-lists-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "toksta-creators-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "toksta-enrichment-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "toksta-evidence-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "toksta-jobs-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "toksta-system-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
+}

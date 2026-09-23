@@ -1,0 +1,32 @@
+# Front Door AI Index — toksta — 2026-09-17
+# AI vocabulary counted on the provider's root page. Generated; do not edit.
+# `score` is null unless ownership is `own` — see front_door_ai.py.
+front_door_ai:
+  slug: toksta
+  lexicon_version: '1.0'
+  probed_at: '2026-09-17'
+  host: www.toksta.com
+  final_host: www.toksta.com
+  ownership: own
+  owner: toksta
+  shares_host_with: null
+  inherited_from: null
+  verdict: scored
+  score: 30
+  host_score: 30
+  density: 25.4
+  words: 1181
+  tiers:
+    agentic: 10
+    core: 20
+    model: 0
+  ambiguous: 13
+  top_terms:
+    AI: 20
+    agent: 7
+    intelligence: 5
+    AI agent: 4
+    MCP: 3
+    autonomous agent: 2
+    AI assistant: 1
+    smart: 1
