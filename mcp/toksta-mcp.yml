@@ -180,3 +180,15 @@ cross_links:
   authentication: authentication/toksta-authentication.yml
   plans: plans/toksta-plans-pricing.yml
   well_known: well-known/toksta-well-known.yml
+rfc9728:
+  endpoint: https://mcp.toksta.com/mcp
+  metadata_url: https://mcp.toksta.com/.well-known/oauth-protected-resource/mcp
+  discovered_via: WWW-Authenticate resource_metadata on an anonymous POST initialize
+  fetched: '2026-09-25'
+  http_status: 200
+  content_type: application/json
+  document:
+    resource: https://mcp.toksta.com/mcp
+    authorization_servers:
+    - https://zkdnqaotketigndjpfqw.supabase.co/auth/v1
+    resource_name: Toksta MCP Server
