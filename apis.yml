@@ -285,6 +285,8 @@ apis:
   humanURL: https://help.toksta.com/public-api/toksta-public-api
   baseURL: https://api.toksta.com
   tags:
+  - Data Enrichment
+  tags_raw:
   - Enrichment
   properties:
   - type: OpenAPI
